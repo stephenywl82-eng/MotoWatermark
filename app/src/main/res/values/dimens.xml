@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Margins and Padding -->
+    <dimen name="margin_small">8dp</dimen>
+    <dimen name="margin_medium">16dp</dimen>
+    <dimen name="margin_large">24dp</dimen>
+    <dimen name="margin_xlarge">32dp</dimen>
+    
+    <dimen name="padding_small">8dp</dimen>
+    <dimen name="padding_medium">16dp</dimen>
+    <dimen name="padding_large">24dp</dimen>
+    
+    <!-- Corner Radius -->
+    <dimen name="corner_small">8dp</dimen>
+    <dimen name="corner_medium">12dp</dimen>
+    <dimen name="corner_large">16dp</dimen>
+    <dimen name="corner_xlarge">24dp</dimen>
+    
+    <!-- Elevation -->
+    <dimen name="elevation_low">2dp</dimen>
+    <dimen name="elevation_medium">4dp</dimen>
+    <dimen name="elevation_high">8dp</dimen>
+    
+    <!-- Logo sizes -->
+    <dimen name="logo_width">280dp</dimen>
+    <dimen name="logo_height">100dp</dimen>
+    
+    <!-- Preview margins -->
+    <dimen name="preview_top_margin">290dp</dimen>
+    <dimen name="preview_bottom_margin">180dp</dimen>
+    
+    <!-- Style preview -->
+    <dimen name="style_preview_width">72dp</dimen>
+    <dimen name="style_preview_height">28dp</dimen>
+</resources>

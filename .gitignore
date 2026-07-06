@@ -1,0 +1,33 @@
+﻿# Android/Gradle
+.gradle/
+build/
+*/build/
+local.properties
+*.iml
+.idea/
+*.log
+*.hprof
+.cxx/
+captures/
+.externalNativeBuild/
+
+# Keystore / secrets
+*.keystore
+*.jks
+keystore.properties
+app/keystore.properties
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Build artifacts
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Temp scripts
+_*.py

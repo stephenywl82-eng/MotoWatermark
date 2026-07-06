@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Moto Watermark</string>
+    <string name="select_photo">Select Photo</string>
+    <string name="apply_watermark">Apply Watermark</string>
+    <string name="save_image">Save</string>
+    <string name="processing">Processing…</string>
+    <string name="success_saved">Watermarked image saved!</string>
+</resources>
