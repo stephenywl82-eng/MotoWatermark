@@ -613,9 +613,9 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             val nameGap = nameSize * 1.30f
             // Total group height: logo + gap + @name text
             val groupH = if (hasOwnerName) actualLogoH + nameGap + atSize else actualLogoH
-            // Center then offset down 20% of free space
+            // Center, then offset down 20% only when owner name is shown
             val freeSpace = barH - groupH
-            val groupTop = barTop + freeSpace / 2f + freeSpace * 0.40f
+            val groupTop = if (hasOwnerName) barTop + freeSpace / 2f + freeSpace * 0.20f else barTop + freeSpace / 2f
             val logoTop = groupTop
 
             val tinted = tintBitmap(logo, textColor)
