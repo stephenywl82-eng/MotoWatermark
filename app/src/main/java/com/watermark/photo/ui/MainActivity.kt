@@ -28,6 +28,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
 import androidx.core.content.ContextCompat
+import androidx.core.widget.doAfterTextChanged
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -55,6 +56,7 @@ class MainActivity : AppCompatActivity() {
     private var manualPickColor: Int? = null
     private var useWhiteText: Boolean? = null
     private var useWhiteBg = false
+    private var ownerName = ""
     private var isPickMode = false             // 鏄惁澶勪簬鍙栬壊妯″紡
     /** ChipGroup 瀛怌hip鍒楄〃 */
     private fun android.view.ViewGroup.chipChildren() =
@@ -100,6 +102,7 @@ class MainActivity : AppCompatActivity() {
         originalColor = prefs.getBoolean("original_color", false)
         barbiePink = prefs.getBoolean("barbie_pink", false)
         currentStyle = prefs.getInt("style", 1)
+        ownerName = prefs.getString("owner_name", "") ?: ""
 
         // 鎭㈠鎺т欢鐘舵€?        binding.switchParams.isChecked = showParams
         binding.switchDate.isChecked = showDate
@@ -265,6 +268,14 @@ class MainActivity : AppCompatActivity() {
         binding.switchWhiteText.setOnCheckedChangeListener { _, isChecked ->
             useWhiteText = if (isChecked) true else null
             applyWatermarkAndShow()
+        }
+
+        // Owner name input
+        binding.etOwnerName.setText(ownerName)
+        binding.etOwnerName.doAfterTextChanged { text ->
+            ownerName = text?.toString()?.trim() ?: ""
+            prefs.edit().putString("owner_name", ownerName).apply()
+            if (currentBitmap != null) applyWatermarkAndShow()
         }
 
         // White background switch
@@ -484,7 +495,8 @@ class MainActivity : AppCompatActivity() {
                     barbiePink = barbiePink,
                     manualPickColor = manualPickColor,
                     useWhiteText = useWhiteText,
-                    useWhiteBg = useWhiteBg
+                    useWhiteBg = useWhiteBg,
+                    ownerName = ownerName
                 )
                 WatermarkEngine.render(bitmap, info, this@MainActivity)
             }

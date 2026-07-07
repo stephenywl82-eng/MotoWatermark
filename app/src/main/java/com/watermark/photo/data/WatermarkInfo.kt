@@ -33,7 +33,8 @@ data class WatermarkInfo(
     val barbiePink: Boolean = false,       // 浓郁芭比粉模式（强制 L=0.6，S=max(seed,0.95)）
     val manualPickColor: Int? = null,  // 手动取色值（非 null 时覆盖自动取色，仅模式1）
     val useWhiteText: Boolean? = null,   // 强制文字颜色：true=白色, false=黑色, null=自动
-    val useWhiteBg: Boolean = false        // 模式1纯白底色开关
+    val useWhiteBg: Boolean = false,       // 模式1纯白底色开关
+    val ownerName: String = ""             // 照片拥有者名字，如 @stephen
 )
 
 enum class DisplayMode {

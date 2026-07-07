@@ -427,6 +427,17 @@ object WatermarkEngine {
             datePaint.setShadowLayer(rowH * 0.025f, 0f, rowH * 0.02f, Color.argb(100, 0, 0, 0))
             canvas.drawText(info.date, barCenterX, row4Y + datePaint.textSize * 0.36f, datePaint)
         }
+
+        // Owner name below date
+        if (info.ownerName.isNotBlank()) {
+            val ownerPaint = Paint().apply {
+                color = Color.argb(120, 255, 255, 255)
+                textSize = rowH * 0.16f
+                typeface = getMontserratTypeface(context)
+                textAlign = Paint.Align.CENTER
+            }
+            canvas.drawText("@${info.ownerName}", barCenterX, row4Y + rowH * 0.55f, ownerPaint)
+        }
     }
 
 private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: Int, spec: WatermarkMath.LayoutSpec, info: WatermarkInfo, colorScheme: SmartColorExtractor.ColorScheme, context: Context) {
@@ -508,6 +519,17 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             datePaint.setShadowLayer(textSize * 0.10f, 0f, textSize * 0.05f, Color.argb(120, 0, 0, 0))
             canvas.drawText(info.date, rightX, bottomY - 1.1f * textSize - textSize * 1.05f, datePaint)
         }
+
+        // Owner name top-left
+        if (info.ownerName.isNotBlank()) {
+            val ownerPaint = Paint().apply {
+                color = Color.argb(160, Color.red(textColor), Color.green(textColor), Color.blue(textColor))
+                this.textSize = srcH * 0.018f
+                typeface = Typeface.create(getMontserratTypeface(context), Typeface.NORMAL)
+                textAlign = Paint.Align.LEFT
+            }
+            canvas.drawText("@${info.ownerName}", srcW * 0.035f, srcH * 0.038f, ownerPaint)
+        }
     }
 
     // 从 APK 资源加载缓存的 Motorola logo Bitmap
@@ -552,7 +574,7 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         val logo = getMotorolaLogo(context)
         if (logo != null && !logo.isRecycled) {
             val logoStartX = startX + barH * 0.06f  // logo左边留空
-            val desiredLogoH = barH * 0.2143f
+            val desiredLogoH = barH * 0.257f
             val logoW = (logo.width.toFloat() / logo.height) * desiredLogoH
             // 长型号名(如 razr ultra 2025)时限制 logo 最大宽度，防止左边溢出
             val maxLogoW = barH * 1.05f
@@ -578,6 +600,19 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
                 val suffixBaseline = barTop + barH * 0.605f
                 val suffixX = logoStartX + actualLogoW + barH * 0.0693f  // logo与文字间距
                 canvas.drawText(suffix.lowercase(), suffixX, suffixBaseline, suffixPaint)
+            }
+
+            // Owner name below logo
+            if (info.ownerName.isNotBlank()) {
+                val ownerPaint = Paint().apply {
+                    color = Color.argb(180, Color.red(textColor), Color.green(textColor), Color.blue(textColor))
+                    textSize = desiredLogoH * 0.40f  // 40% of logo height
+                    this.typeface = typeface
+                    textAlign = Paint.Align.LEFT
+                    isFakeBoldText = false
+                }
+                val ownerY = logoTop + actualLogoH + desiredLogoH * 0.40f * 1.2f
+                canvas.drawText("@${info.ownerName}", logoStartX, ownerY, ownerPaint)
             }
         }
     }
@@ -674,7 +709,7 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             val textLeftX = rightX - measurePaint.measureText(paramText)
             val lineX = textLeftX - barH * 0.2415f
             drawMode4VerticalLine(canvas, lineX, barH, barTop, textColor)
-            drawMode4Logo(canvas, lineX, barH, barTop, textColor, context)
+            drawMode4Logo(canvas, lineX, barH, barTop, textColor, context, info)
             return
         }
 
@@ -714,7 +749,7 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         // Vertical line separator
         val lineX = textLeftX - barH * 0.2415f
         drawMode4VerticalLine(canvas, lineX, barH, barTop, textColor)
-        drawMode4Logo(canvas, lineX, barH, barTop, textColor, context)
+        drawMode4Logo(canvas, lineX, barH, barTop, textColor, context, info)
     }
 
     private fun drawMode4VerticalLine(canvas: Canvas, lineX: Float, barH: Float, barTop: Float, textColor: Int) {
@@ -726,11 +761,11 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         canvas.drawLine(lineX, barTop + barH * 0.2837f, lineX, barTop + barH * 0.7163f, linePaint)
     }
 
-    private fun drawMode4Logo(canvas: Canvas, lineX: Float, barH: Float, barTop: Float, textColor: Int, context: Context) {
+    private fun drawMode4Logo(canvas: Canvas, lineX: Float, barH: Float, barTop: Float, textColor: Int, context: Context, info: WatermarkInfo? = null) {
         try {
             val src = BitmapFactory.decodeResource(context.resources, R.drawable.mode4_m_logo) ?: return
             if (!src.isRecycled) {
-                val logoH = barH * 0.729f
+                val logoH = barH * 0.875f
                 val logoW = (src.width.toFloat() / src.height) * logoH
                 val logoX = lineX - logoW - barH * 0.07f
                 val logoY = barTop + (barH - logoH) / 2f
@@ -738,6 +773,21 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
                 src.recycle()
                 canvas.drawBitmap(tinted, null, RectF(logoX, logoY, logoX + logoW, logoY + logoH), null)
                 tinted.recycle()
+
+                // Owner name below logo
+                if (info != null && info.ownerName.isNotBlank()) {
+                    val ownerPaint = Paint().apply {
+                        color = Color.argb(180, Color.red(textColor), Color.green(textColor), Color.blue(textColor))
+                        textSize = logoH * 0.40f * 0.875f / barH * 0.875f
+                        typeface = Typeface.DEFAULT
+                        textAlign = Paint.Align.LEFT
+                        isFakeBoldText = false
+                    }
+                    // Calculate text size properly
+                    ownerPaint.textSize = barH * 0.12f
+                    val ownerY = logoY + logoH + barH * 0.04f
+                    canvas.drawText("@${info.ownerName}", logoX, ownerY, ownerPaint)
+                }
             }
         } catch (_: Exception) {}
     }
@@ -825,6 +875,17 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             textAlign = Paint.Align.LEFT
         }
         canvas.drawText("\u25C6 FILM", srcW * 0.03f, srcH - bottomStripH * 0.22f, stampPaint)
+
+        // Owner name bottom-right
+        if (info.ownerName.isNotBlank()) {
+            val ownerPaint = Paint().apply {
+                color = Color.argb(100, 255, 255, 255)
+                textSize = bottomStripH * 0.16f
+                typeface = getMontserratTypeface(context)
+                textAlign = Paint.Align.RIGHT
+            }
+            canvas.drawText("@${info.ownerName}", srcW - srcW * 0.035f, srcH - bottomStripH * 0.08f, ownerPaint)
+        }
     }
 
     // ==================== Mode 6: Minimalist Label ====================
@@ -929,6 +990,17 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             canvas.drawText(text, chipLeft + chipPadH, lineY, paint)
             lineY += lineH
         }
+
+        // Owner name — top-left mirror of chip
+        if (info.ownerName.isNotBlank()) {
+            val ownerPaint = Paint().apply {
+                color = Color.argb(140, 255, 255, 255)
+                textSize = subTextSize * 0.72f
+                typeface = getMontserratTypeface(context)
+                textAlign = Paint.Align.LEFT
+            }
+            canvas.drawText("@${info.ownerName}", pad, pad + labelTextSize * 0.9f, ownerPaint)
+        }
     }
 
     // ==================== Mode 7: Signature Strip ====================
@@ -988,6 +1060,17 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             }
             val baseline = stripH / 2f + paramPaint.textSize * 0.38f
             canvas.drawText(paramStr, srcW - pad, baseline, paramPaint)
+        }
+
+        // Owner name bottom-left
+        if (info.ownerName.isNotBlank()) {
+            val ownerPaint = Paint().apply {
+                color = Color.argb(100, 255, 255, 255)
+                textSize = stripH * 0.22f
+                typeface = getMontserratTypeface(context)
+                textAlign = Paint.Align.LEFT
+            }
+            canvas.drawText("@${info.ownerName}", pad, srcH - pad, ownerPaint)
         }
     }
 
@@ -1073,6 +1156,17 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         // Name
         val nameBaseline = badgeCenterY + namePaint.textSize * 0.38f
         canvas.drawText(deviceName, cx, nameBaseline, namePaint)
+
+        // Owner name bottom-left of image
+        if (info.ownerName.isNotBlank()) {
+            val ownerPaint = Paint().apply {
+                color = Color.argb(100, 255, 255, 255)
+                textSize = badgeH * 0.24f
+                typeface = getMontserratTypeface(context)
+                textAlign = Paint.Align.LEFT
+            }
+            canvas.drawText("@${info.ownerName}", margin, srcH - badgeH - margin - badgeH * 0.6f, ownerPaint)
+        }
     }
 
     // ==================== Mode 9: Cinematic Frame ====================
@@ -1175,6 +1269,17 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             val tinted = tintBitmap(logo, Color.argb(180, 255, 255, 255))
             canvas.drawBitmap(tinted, null, RectF(logoX, logoY, logoX + logoW, logoY + logoH), null)
             tinted.recycle()
+        }
+
+        // Owner name top-left inside frame
+        if (info.ownerName.isNotBlank()) {
+            val ownerPaint = Paint().apply {
+                color = Color.argb(140, 255, 255, 255)
+                textSize = refSize * 0.015f
+                typeface = getMontserratTypeface(context)
+                textAlign = Paint.Align.LEFT
+            }
+            canvas.drawText("@${info.ownerName}", frameMargin + refSize * 0.006f, frameMargin + refSize * 0.026f, ownerPaint)
         }
     }
 
@@ -1298,6 +1403,17 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
                 val paramBaseline = if (dateStr.isNotBlank()) baseline - subSz * 1.15f else baseline
                 canvas.drawText(paramStr, rx.toFloat(), paramBaseline, paramPaint)
             }
+        }
+
+        // Owner name top-left
+        if (info.ownerName.isNotBlank()) {
+            val ownerPaint = Paint().apply {
+                color = Color.argb(160, 255, 255, 255)
+                textSize = subSz * 0.7f
+                typeface = getMontserratTypeface(context)
+                textAlign = Paint.Align.LEFT
+            }
+            canvas.drawText("@${info.ownerName}", padX, barTop - barH * 0.15f, ownerPaint)
         }
     }
 
