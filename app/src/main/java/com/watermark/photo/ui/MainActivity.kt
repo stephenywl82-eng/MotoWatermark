@@ -117,6 +117,7 @@ class MainActivity : AppCompatActivity() {
             8 -> binding.chipStyle8.isChecked = true
             9 -> binding.chipStyle9.isChecked = true
             10 -> binding.chipStyle10.isChecked = true
+            11 -> binding.chipStyle11.isChecked = true
         }
         if (richSaturation) binding.chipVibrant.isChecked = true
         if (originalColor) binding.chipOriginal.isChecked = true
@@ -214,13 +215,14 @@ class MainActivity : AppCompatActivity() {
                 checkedIds.contains(R.id.chipStyle8) -> 8
                 checkedIds.contains(R.id.chipStyle9) -> 9
                 checkedIds.contains(R.id.chipStyle10) -> 10
+                checkedIds.contains(R.id.chipStyle11) -> 11
                 else -> 1
             }
             prefs.edit().putInt("style", currentStyle).apply()
             // 妯″紡2/3闅愯棌棰滆壊妯″紡chip锛屼繚鐣欏彇鑹瞔hip
             val colorModeChips = binding.colorChipGroup.chipChildren()
                 .filter { it.id == R.id.chipVibrant || it.id == R.id.chipOriginal || it.id == R.id.chipBarbie }
-            colorModeChips.forEach { it.visibility = if (currentStyle == 1 || currentStyle == 4 || currentStyle == 5 || currentStyle == 6 || currentStyle == 7 || currentStyle == 8 || currentStyle == 9 || currentStyle == 10) View.VISIBLE else View.GONE }
+            colorModeChips.forEach { it.visibility = if (currentStyle == 1 || currentStyle == 4 || currentStyle == 5 || currentStyle == 6 || currentStyle == 7 || currentStyle == 8 || currentStyle == 9 || currentStyle == 10 || currentStyle == 11) View.VISIBLE else View.GONE }
             binding.colorChipGroup.visibility = View.VISIBLE
             updateStylePreview()
             applyWatermarkAndShow()
@@ -840,6 +842,35 @@ class MainActivity : AppCompatActivity() {
             pr.textSize = 6.5f
             pr.alpha = 130
             canvas.drawText("2025-06-16", 306f, barT + 26f, pr)
+        } else if (currentStyle == 11) {
+            // F1 Logo preview
+            canvas.drawColor(android.graphics.Color.parseColor("#2a3038"))
+            val barT = 88f
+            val bgP = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.argb(180, 0, 0, 0)
+            }
+            canvas.drawRect(0f, barT, 320f, 120f, bgP)
+            val lineP = android.graphics.Paint().apply {
+                color = android.graphics.Color.argb(180, 255, 180, 50)
+                strokeWidth = 1.5f
+            }
+            canvas.drawLine(12f, barT, 308f, barT, lineP)
+            val nl = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.argb(230, 255, 255, 255)
+                textSize = 10f
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                textAlign = android.graphics.Paint.Align.LEFT
+            }
+            canvas.drawText("motorola", 14f, barT + 20f, nl)
+            nl.textSize = 11f
+            canvas.drawText("ThinkPhone 25", 68f, barT + 20f, nl)
+            val pr = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.argb(160, 255, 255, 255)
+                textSize = 9f
+                typeface = android.graphics.Typeface.DEFAULT
+                textAlign = android.graphics.Paint.Align.RIGHT
+            }
+            canvas.drawText("F1", 306f, barT + 20f, pr)
         } else if (currentStyle == 2) {
             canvas.drawColor(android.graphics.Color.parseColor("#333333"))
             val imgRect = android.graphics.RectF(20f, 10f, 300f, 90f)

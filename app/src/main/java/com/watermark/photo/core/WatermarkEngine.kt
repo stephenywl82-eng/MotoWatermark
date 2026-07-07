@@ -382,15 +382,15 @@ object WatermarkEngine {
         val row3Y = barTop + rowH * 1.95f    // Params center Y
         val row4Y = barTop + rowH * 2.75f    // Date center Y
 
-        // Row 1: Moto Logo (centered)
-        var motoLogo: Bitmap? = try { BitmapFactory.decodeResource(context.resources, R.drawable.motorola) } catch (e: Exception) { null }
+        // Row 1: Moto Logo (centered) — use white/black PNG based on bg
+        val logoLum = (((Color.red(logoColor) * 0.299f) + (Color.green(logoColor) * 0.587f)) + (Color.blue(logoColor) * 0.114f)) / 255.0f
+        val logoResId = if (logoLum >= 0.5f) R.drawable.mode1_logo_black else R.drawable.mode1_logo_white
+        var motoLogo: Bitmap? = try { BitmapFactory.decodeResource(context.resources, logoResId) } catch (e: Exception) { null }
         if (motoLogo != null && !motoLogo.isRecycled) {
             val logoH = rowH * 1.4f
             val logoW = (motoLogo.width.toFloat() / motoLogo.height) * logoH
             val logoX = barCenterX - logoW / 2f
-            val tintedLogo = tintBitmap(motoLogo, logoColor)
-            canvas.drawBitmap(tintedLogo, null, RectF(logoX, row1Y - logoH / 2f, logoX + logoW, row1Y + logoH / 2f), null)
-            tintedLogo.recycle()
+            canvas.drawBitmap(motoLogo, null, RectF(logoX, row1Y - logoH / 2f, logoX + logoW, row1Y + logoH / 2f), null)
             motoLogo.recycle()
         }
 
@@ -592,22 +592,32 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         }
 
         val typeface = Typeface.create(getMontserratTypeface(context), Typeface.BOLD)
-        val baseline = barTop + barH * 0.62f
 
         // Motorola logo 图片（着色替换文字 "motorola"）
         val logo = getMotorolaLogo(context)
         if (logo != null && !logo.isRecycled) {
-            val logoStartX = startX + barH * 0.06f  // logo左边留空
+            val logoStartX = startX + barH * 0.06f
             val desiredLogoH = barH * 0.257f
             val logoW = (logo.width.toFloat() / logo.height) * desiredLogoH
-            // 长型号名(如 razr ultra 2025)时限制 logo 最大宽度，防止左边溢出
             val maxLogoW = barH * 1.05f
             val (actualLogoW, actualLogoH) = if (logoW > maxLogoW) {
                 maxLogoW to (maxLogoW / (logo.width.toFloat() / logo.height))
             } else {
                 logoW to desiredLogoH
             }
-            val logoTop = barTop + (barH - actualLogoH) * 0.525f
+
+            val hasOwnerName = info.ownerName.isNotBlank()
+            val nameSize = desiredLogoH * 0.60f
+            val atSize = nameSize * 1.25f
+            // Gap between logo bottom and @name baseline — bigger separation
+            val nameGap = nameSize * 1.30f
+            // Total group height: logo + gap + @name text
+            val groupH = if (hasOwnerName) actualLogoH + nameGap + atSize else actualLogoH
+            // Center then offset down 20% of free space
+            val freeSpace = barH - groupH
+            val groupTop = barTop + freeSpace / 2f + freeSpace * 0.40f
+            val logoTop = groupTop
+
             val tinted = tintBitmap(logo, textColor)
             canvas.drawBitmap(tinted, null, RectF(logoStartX, logoTop, logoStartX + actualLogoW, logoTop + actualLogoH), null)
             tinted.recycle()
@@ -620,16 +630,15 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
                     textAlign = Paint.Align.LEFT
                     isFakeBoldText = false
                 }
-                // 文字与logo垂直居中
-                val suffixBaseline = barTop + barH * 0.605f
-                val suffixX = logoStartX + actualLogoW + barH * 0.0693f  // logo与文字间距
+                // Vertically centered on logo (same row), not on bar
+                val suffixCenterY = logoTop + actualLogoH / 2f
+                val suffixBaseline = suffixCenterY + suffixPaint.textSize * 0.38f
+                val suffixX = logoStartX + actualLogoW + barH * 0.0693f
                 canvas.drawText(suffix.lowercase(), suffixX, suffixBaseline, suffixPaint)
             }
 
             // Owner name below logo
-            if (info.ownerName.isNotBlank()) {
-                val nameSize = desiredLogoH * 0.60f
-                val atSize = nameSize * 1.25f
+            if (hasOwnerName) {
                 val atPaint = Paint().apply {
                     color = Color.argb(180, Color.red(textColor), Color.green(textColor), Color.blue(textColor))
                     textSize = atSize
@@ -644,10 +653,13 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
                     textAlign = Paint.Align.LEFT
                     isFakeBoldText = false
                 }
-                val ownerY = logoTop + actualLogoH + nameSize * 1.44f
+                // @ and name share baseline, positioned at logo bottom + gap
+                val ownerY = logoTop + actualLogoH + nameGap
                 canvas.drawText("@", logoStartX, ownerY, atPaint)
                 val atWidth = atPaint.measureText("@")
-                canvas.drawText(info.ownerName, logoStartX + atWidth, ownerY, namePaint)
+                // name text slightly offset to visually align baseline with @
+                val nameOffset = (atSize - nameSize) * 0.35f
+                canvas.drawText(info.ownerName, logoStartX + atWidth, ownerY - nameOffset, namePaint)
             }
         }
     }
@@ -657,6 +669,13 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             drawMode4Right(canvas, srcW, barTop, barH, info, textColor, mutedColor, context, isPortrait)
             return
         }
+
+        // Style 11: F1 logo (bigger), content shifted left to make room
+        if (style == 11) {
+            drawMode11Right(canvas, srcW, barTop, barH, info, textColor, mutedColor, context, isPortrait)
+            return
+        }
+
         var rightX = srcW - barH * 0.2f
 
         // Right logo: white variant on dark bg, black variant on light bg
@@ -809,6 +828,70 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
                 tinted.recycle()
             }
         } catch (_: Exception) {}
+    }
+
+    // ==================== Mode 11: F1 Logo Right ====================
+
+    private fun drawMode11Right(canvas: Canvas, srcW: Int, barTop: Float, barH: Float, info: WatermarkInfo, textColor: Int, mutedColor: Int, context: Context, isPortrait: Boolean) {
+        // F1 logo: white variant on dark bg, inverted (black) variant on light bg
+        val textLum = (((Color.red(textColor) * 0.299f) + (Color.green(textColor) * 0.587f)) + (Color.blue(textColor) * 0.114f)) / 255.0f
+        val useLight = textLum >= 0.5f
+        val f1Logo = BitmapFactory.decodeResource(context.resources, R.drawable.mode11_logo)
+        var rightX = srcW - barH * 0.08f
+
+        if (f1Logo != null && !f1Logo.isRecycled) {
+            // Bigger logo: ~85% of bar height (vs default 68%)
+            val logoH = barH * 0.85f
+            val logoW = (f1Logo.width.toFloat() / f1Logo.height) * logoH
+
+            val displayLogo = if (useLight) {
+                // Dark text → use original (white/yellow/red actually works on dark bg? original has colors)
+                // User wants: light text = original, dark text = inverted black
+                f1Logo
+            } else {
+                // Dark text → black version via invert
+                val inv = invertRightLogoForDark(f1Logo)
+                f1Logo.recycle()
+                inv
+            }
+
+            if (displayLogo != null && !displayLogo.isRecycled) {
+                val logoX = rightX - logoW
+                val logoY = barTop + (barH - logoH) / 2f
+                canvas.drawBitmap(displayLogo, null, RectF(logoX, logoY, logoX + logoW, logoY + logoH), null)
+                rightX = logoX - barH * 0.12f
+                if (displayLogo !== f1Logo) displayLogo.recycle()
+                else if (!useLight && f1Logo.isRecycled) {} else if (useLight) f1Logo.recycle()
+            }
+        } else {
+            rightX = srcW - barH * 0.20f
+        }
+
+        // params line — shifted left
+        if (info.showParams) {
+            val paramPaint = Paint()
+            paramPaint.color = textColor
+            paramPaint.textSize = (if (isPortrait) 0.168f else 0.21f) * barH
+            paramPaint.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            paramPaint.letterSpacing = 0.015f
+            paramPaint.textAlign = Paint.Align.RIGHT
+            val paramTextSize = paramPaint.textSize
+            val paramY = if (!info.showDate) barTop + barH / 2f + 0.35f * paramTextSize
+                         else barTop + 0.38f * barH + 0.35f * paramTextSize
+            canvas.drawText(buildParamString(info), rightX, paramY, paramPaint)
+        }
+
+        // date line
+        if (info.showDate) {
+            val datePaint = Paint()
+            datePaint.color = fadeColor(textColor, 0.17f)
+            datePaint.textSize = 0.17765f * barH
+            datePaint.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+            datePaint.letterSpacing = 0.015f
+            datePaint.textAlign = Paint.Align.RIGHT
+            val dateTextSize = datePaint.textSize
+            canvas.drawText(info.date, rightX, barTop + 0.69f * barH + 0.35f * dateTextSize, datePaint)
+        }
     }
 
     // ==================== Mode 5: Film Frame ====================
@@ -1510,7 +1593,7 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         val w = source.width
         val h = source.height
         val spec = WatermarkMath.computeLayoutSpec(w, h)
-        val outputH = if (info.style == 1 || info.style == 4) h + spec.barH.toInt() else h
+        val outputH = if (info.style == 1 || info.style == 4 || info.style == 11) h + spec.barH.toInt() else h
         val output = Bitmap.createBitmap(w, outputH, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
         val colorScheme = when {
@@ -1530,7 +1613,7 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             else -> SmartColorExtractor.extract(source)
         }
 
-        val extend = info.style == 1 || info.style == 4
+        val extend = info.style == 1 || info.style == 4 || info.style == 11
         when (info.style) {
             2 -> drawBlurFrameMode(canvas, source, w, outputH, spec, info, colorScheme, context)
             3 -> drawDiagonalMode(canvas, source, w, outputH, spec, info, colorScheme, context)
