@@ -659,19 +659,18 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         }
         var rightX = srcW - barH * 0.2f
 
-        // 深色文字时翻转 logo：白色→黑(#1A1A1A)，其他→白(#F5F5F5)
-        info.rightLogo?.let { logo ->
-            if (!logo.isRecycled) {
-                val textLum = (((Color.red(textColor) * 0.299f) + (Color.green(textColor) * 0.587f)) + (Color.blue(textColor) * 0.114f)) / 255.0f
-                val drawLogo = if (textLum < 0.5f) logo else invertRightLogoForDark(logo)
-                val logoH = barH * 0.68f
-                val logoW = (logo.width.toFloat() / logo.height) * logoH
-                val logoX = rightX - logoW
-                val logoY = barTop + (barH - logoH) / 2f
-                canvas.drawBitmap(drawLogo, null, RectF(logoX, logoY, logoX + logoW, logoY + logoH), null)
-                if (drawLogo !== logo) drawLogo.recycle()
-                rightX = logoX - barH * 0.2f
-            }
+        // Right logo: white variant on dark bg, black variant on light bg
+        val textLum = (((Color.red(textColor) * 0.299f) + (Color.green(textColor) * 0.587f)) + (Color.blue(textColor) * 0.114f)) / 255.0f
+        val logoResId = if (textLum >= 0.5f) R.drawable.mode1_logo_white else R.drawable.mode1_logo_black
+        val logo = BitmapFactory.decodeResource(context.resources, logoResId)
+        if (logo != null && !logo.isRecycled) {
+            val logoH = barH * 0.68f
+            val logoW = (logo.width.toFloat() / logo.height) * logoH
+            val logoX = rightX - logoW
+            val logoY = barTop + (barH - logoH) / 2f
+            canvas.drawBitmap(logo, null, RectF(logoX, logoY, logoX + logoW, logoY + logoH), null)
+            logo.recycle()
+            rightX = logoX - barH * 0.2f
         }
 
         // params line
