@@ -430,13 +430,26 @@ object WatermarkEngine {
 
         // Owner name below date
         if (info.ownerName.isNotBlank()) {
-            val ownerPaint = Paint().apply {
+            val nameSize = rowH * 0.16f
+            val atSize = nameSize * 1.25f
+            val atPaint = Paint().apply {
                 color = Color.argb(120, 255, 255, 255)
-                textSize = rowH * 0.16f
+                textSize = atSize
                 typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.CENTER
+                textAlign = Paint.Align.LEFT
             }
-            canvas.drawText("@${info.ownerName}", barCenterX, row4Y + rowH * 0.55f, ownerPaint)
+            val namePaint = Paint().apply {
+                color = Color.argb(120, 255, 255, 255)
+                textSize = nameSize
+                typeface = getMontserratTypeface(context)
+                textAlign = Paint.Align.LEFT
+            }
+            val atW = atPaint.measureText("@")
+            val nameW = namePaint.measureText(info.ownerName)
+            val totalW = atW + nameW
+            val ownerY = row4Y + rowH * 0.55f
+            canvas.drawText("@", barCenterX - totalW / 2f, ownerY, atPaint)
+            canvas.drawText(info.ownerName, barCenterX - totalW / 2f + atW, ownerY, namePaint)
         }
     }
 
@@ -522,13 +535,24 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
 
         // Owner name top-left
         if (info.ownerName.isNotBlank()) {
-            val ownerPaint = Paint().apply {
+            val nameSize = srcH * 0.018f
+            val atSize = nameSize * 1.25f
+            val atPaint = Paint().apply {
                 color = Color.argb(160, Color.red(textColor), Color.green(textColor), Color.blue(textColor))
-                this.textSize = srcH * 0.018f
+                this.textSize = atSize
                 typeface = Typeface.create(getMontserratTypeface(context), Typeface.NORMAL)
                 textAlign = Paint.Align.LEFT
             }
-            canvas.drawText("@${info.ownerName}", srcW * 0.035f, srcH * 0.038f, ownerPaint)
+            val namePaint = Paint().apply {
+                color = Color.argb(160, Color.red(textColor), Color.green(textColor), Color.blue(textColor))
+                this.textSize = nameSize
+                typeface = Typeface.create(getMontserratTypeface(context), Typeface.NORMAL)
+                textAlign = Paint.Align.LEFT
+            }
+            val x = srcW * 0.035f
+            val y = srcH * 0.038f
+            canvas.drawText("@", x, y, atPaint)
+            canvas.drawText(info.ownerName, x + atPaint.measureText("@"), y, namePaint)
         }
     }
 
@@ -604,15 +628,26 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
 
             // Owner name below logo
             if (info.ownerName.isNotBlank()) {
-                val ownerPaint = Paint().apply {
+                val nameSize = desiredLogoH * 0.60f
+                val atSize = nameSize * 1.25f
+                val atPaint = Paint().apply {
                     color = Color.argb(180, Color.red(textColor), Color.green(textColor), Color.blue(textColor))
-                    textSize = desiredLogoH * 0.40f  // 40% of logo height
+                    textSize = atSize
                     this.typeface = typeface
                     textAlign = Paint.Align.LEFT
                     isFakeBoldText = false
                 }
-                val ownerY = logoTop + actualLogoH + desiredLogoH * 0.40f * 1.2f
-                canvas.drawText("@${info.ownerName}", logoStartX, ownerY, ownerPaint)
+                val namePaint = Paint().apply {
+                    color = Color.argb(180, Color.red(textColor), Color.green(textColor), Color.blue(textColor))
+                    textSize = nameSize
+                    this.typeface = typeface
+                    textAlign = Paint.Align.LEFT
+                    isFakeBoldText = false
+                }
+                val ownerY = logoTop + actualLogoH + nameSize * 1.44f
+                canvas.drawText("@", logoStartX, ownerY, atPaint)
+                val atWidth = atPaint.measureText("@")
+                canvas.drawText(info.ownerName, logoStartX + atWidth, ownerY, namePaint)
             }
         }
     }
@@ -773,21 +808,6 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
                 src.recycle()
                 canvas.drawBitmap(tinted, null, RectF(logoX, logoY, logoX + logoW, logoY + logoH), null)
                 tinted.recycle()
-
-                // Owner name below logo
-                if (info != null && info.ownerName.isNotBlank()) {
-                    val ownerPaint = Paint().apply {
-                        color = Color.argb(180, Color.red(textColor), Color.green(textColor), Color.blue(textColor))
-                        textSize = logoH * 0.40f * 0.875f / barH * 0.875f
-                        typeface = Typeface.DEFAULT
-                        textAlign = Paint.Align.LEFT
-                        isFakeBoldText = false
-                    }
-                    // Calculate text size properly
-                    ownerPaint.textSize = barH * 0.12f
-                    val ownerY = logoY + logoH + barH * 0.04f
-                    canvas.drawText("@${info.ownerName}", logoX, ownerY, ownerPaint)
-                }
             }
         } catch (_: Exception) {}
     }
@@ -878,13 +898,26 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
 
         // Owner name bottom-right
         if (info.ownerName.isNotBlank()) {
-            val ownerPaint = Paint().apply {
+            val nameSize = bottomStripH * 0.16f
+            val atSize = nameSize * 1.25f
+            val atPaint = Paint().apply {
                 color = Color.argb(100, 255, 255, 255)
-                textSize = bottomStripH * 0.16f
+                textSize = atSize
                 typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.RIGHT
+                textAlign = Paint.Align.LEFT
             }
-            canvas.drawText("@${info.ownerName}", srcW - srcW * 0.035f, srcH - bottomStripH * 0.08f, ownerPaint)
+            val namePaint = Paint().apply {
+                color = Color.argb(100, 255, 255, 255)
+                textSize = nameSize
+                typeface = getMontserratTypeface(context)
+                textAlign = Paint.Align.LEFT
+            }
+            val y = srcH - bottomStripH * 0.08f
+            val nameW = namePaint.measureText(info.ownerName)
+            val atW = atPaint.measureText("@")
+            val totalW = atW + nameW
+            canvas.drawText("@", srcW - srcW * 0.035f - totalW, y, atPaint)
+            canvas.drawText(info.ownerName, srcW - srcW * 0.035f - totalW + atW, y, namePaint)
         }
     }
 
@@ -993,13 +1026,23 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
 
         // Owner name — top-left mirror of chip
         if (info.ownerName.isNotBlank()) {
-            val ownerPaint = Paint().apply {
+            val nameSize = subTextSize * 0.72f
+            val atSize = nameSize * 1.25f
+            val atPaint = Paint().apply {
                 color = Color.argb(140, 255, 255, 255)
-                textSize = subTextSize * 0.72f
+                textSize = atSize
                 typeface = getMontserratTypeface(context)
                 textAlign = Paint.Align.LEFT
             }
-            canvas.drawText("@${info.ownerName}", pad, pad + labelTextSize * 0.9f, ownerPaint)
+            val namePaint = Paint().apply {
+                color = Color.argb(140, 255, 255, 255)
+                textSize = nameSize
+                typeface = getMontserratTypeface(context)
+                textAlign = Paint.Align.LEFT
+            }
+            val y = pad + labelTextSize * 0.9f
+            canvas.drawText("@", pad, y, atPaint)
+            canvas.drawText(info.ownerName, pad + atPaint.measureText("@"), y, namePaint)
         }
     }
 
@@ -1064,13 +1107,23 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
 
         // Owner name bottom-left
         if (info.ownerName.isNotBlank()) {
-            val ownerPaint = Paint().apply {
+            val nameSize = stripH * 0.22f
+            val atSize = nameSize * 1.25f
+            val atPaint = Paint().apply {
                 color = Color.argb(100, 255, 255, 255)
-                textSize = stripH * 0.22f
+                textSize = atSize
                 typeface = getMontserratTypeface(context)
                 textAlign = Paint.Align.LEFT
             }
-            canvas.drawText("@${info.ownerName}", pad, srcH - pad, ownerPaint)
+            val namePaint = Paint().apply {
+                color = Color.argb(100, 255, 255, 255)
+                textSize = nameSize
+                typeface = getMontserratTypeface(context)
+                textAlign = Paint.Align.LEFT
+            }
+            val y = srcH - pad
+            canvas.drawText("@", pad, y, atPaint)
+            canvas.drawText(info.ownerName, pad + atPaint.measureText("@"), y, namePaint)
         }
     }
 
@@ -1159,13 +1212,23 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
 
         // Owner name bottom-left of image
         if (info.ownerName.isNotBlank()) {
-            val ownerPaint = Paint().apply {
+            val nameSize = badgeH * 0.24f
+            val atSize = nameSize * 1.25f
+            val atPaint = Paint().apply {
                 color = Color.argb(100, 255, 255, 255)
-                textSize = badgeH * 0.24f
+                textSize = atSize
                 typeface = getMontserratTypeface(context)
                 textAlign = Paint.Align.LEFT
             }
-            canvas.drawText("@${info.ownerName}", margin, srcH - badgeH - margin - badgeH * 0.6f, ownerPaint)
+            val namePaint = Paint().apply {
+                color = Color.argb(100, 255, 255, 255)
+                textSize = nameSize
+                typeface = getMontserratTypeface(context)
+                textAlign = Paint.Align.LEFT
+            }
+            val y = srcH - badgeH - margin - badgeH * 0.6f
+            canvas.drawText("@", margin, y, atPaint)
+            canvas.drawText(info.ownerName, margin + atPaint.measureText("@"), y, namePaint)
         }
     }
 
@@ -1273,13 +1336,24 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
 
         // Owner name top-left inside frame
         if (info.ownerName.isNotBlank()) {
-            val ownerPaint = Paint().apply {
+            val nameSize = refSize * 0.015f
+            val atSize = nameSize * 1.25f
+            val atPaint = Paint().apply {
                 color = Color.argb(140, 255, 255, 255)
-                textSize = refSize * 0.015f
+                textSize = atSize
                 typeface = getMontserratTypeface(context)
                 textAlign = Paint.Align.LEFT
             }
-            canvas.drawText("@${info.ownerName}", frameMargin + refSize * 0.006f, frameMargin + refSize * 0.026f, ownerPaint)
+            val namePaint = Paint().apply {
+                color = Color.argb(140, 255, 255, 255)
+                textSize = nameSize
+                typeface = getMontserratTypeface(context)
+                textAlign = Paint.Align.LEFT
+            }
+            val x = frameMargin + refSize * 0.006f
+            val y = frameMargin + refSize * 0.026f
+            canvas.drawText("@", x, y, atPaint)
+            canvas.drawText(info.ownerName, x + atPaint.measureText("@"), y, namePaint)
         }
     }
 
@@ -1407,13 +1481,23 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
 
         // Owner name top-left
         if (info.ownerName.isNotBlank()) {
-            val ownerPaint = Paint().apply {
+            val nameSize = subSz * 0.7f
+            val atSize = nameSize * 1.25f
+            val atPaint = Paint().apply {
                 color = Color.argb(160, 255, 255, 255)
-                textSize = subSz * 0.7f
+                textSize = atSize
                 typeface = getMontserratTypeface(context)
                 textAlign = Paint.Align.LEFT
             }
-            canvas.drawText("@${info.ownerName}", padX, barTop - barH * 0.15f, ownerPaint)
+            val namePaint = Paint().apply {
+                color = Color.argb(160, 255, 255, 255)
+                textSize = nameSize
+                typeface = getMontserratTypeface(context)
+                textAlign = Paint.Align.LEFT
+            }
+            val y = barTop - barH * 0.15f
+            canvas.drawText("@", padX, y, atPaint)
+            canvas.drawText(info.ownerName, padX + atPaint.measureText("@"), y, namePaint)
         }
     }
 
