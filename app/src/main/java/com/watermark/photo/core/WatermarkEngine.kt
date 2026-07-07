@@ -1594,7 +1594,7 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         val h = source.height
         val spec = WatermarkMath.computeLayoutSpec(w, h)
         val outputH = if (info.style == 1 || info.style == 4 || info.style == 11) h + spec.barH.toInt() else h
-        val output = Bitmap.createBitmap(w, outputH, Bitmap.Config.ARGB_8888)
+        val output = Bitmap.createBitmap(w, outputH, Bitmap.Config.RGB_565)
         val canvas = Canvas(output)
         val colorScheme = when {
             info.manualPickColor != null -> {

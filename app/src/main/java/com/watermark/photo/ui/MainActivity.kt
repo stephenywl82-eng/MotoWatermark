@@ -1,4 +1,4 @@
-﻿package com.watermark.photo.ui
+package com.watermark.photo.ui
 
 import android.content.ContentValues
 import android.content.Intent
@@ -65,7 +65,7 @@ class MainActivity : AppCompatActivity() {
     private var pickChipId = View.generateViewId()  // 鍔ㄦ€佸彇鑹睠hip ID
     private lateinit var prefs: SharedPreferences
 
-    /** 瑙ｇ爜鍥剧墖锛氭簮鍥?鈮?24MP 鍏ㄥ昂瀵歌В鐮侊紝瓒呰繃鍒欑缉鏀惧埌 24MP */
+    /** Decode image with inSampleSize to avoid OOM on large photos */
     private fun decodeToMaxMp(bytes: ByteArray, maxMP: Int = 50): Bitmap {
         val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
@@ -73,18 +73,25 @@ class MainActivity : AppCompatActivity() {
         val srcPixels = opts.outWidth.toLong() * opts.outHeight.toLong()
         if (srcPixels <= maxPixels) {
             opts.inJustDecodeBounds = false
+            opts.inPreferredConfig = Bitmap.Config.RGB_565
             return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
                 ?: throw IOException("Cannot decode image")
         }
-        // 缂╂斁鍒?24MP
+        // Downsample to target size
         val scale = kotlin.math.sqrt(maxPixels.toDouble() / srcPixels).toFloat()
         val targetW = (opts.outWidth * scale).toInt()
         val targetH = (opts.outHeight * scale).toInt()
+        // inSampleSize avoids full-res 192MB decode on 50MP photos
+        val maxDim = maxOf(opts.outWidth, opts.outHeight)
+        var sampleSize = 1
+        while (maxDim / sampleSize > 4096) sampleSize *= 2
         opts.inJustDecodeBounds = false
-        val full = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+        opts.inSampleSize = sampleSize
+        opts.inPreferredConfig = Bitmap.Config.RGB_565
+        val sampled = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
             ?: throw IOException("Cannot decode image")
-        val scaled = Bitmap.createScaledBitmap(full, targetW, targetH, true)
-        full.recycle()
+        val scaled = Bitmap.createScaledBitmap(sampled, targetW, targetH, true)
+        sampled.recycle()
         return scaled
     }
 
@@ -944,4 +951,7 @@ class MainActivity : AppCompatActivity() {
         watermarkedBitmap?.recycle()
     }
 }
+
+
+
 
