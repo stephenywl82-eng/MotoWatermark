@@ -130,7 +130,7 @@
                 app:backgroundTint="@color/md_theme_tertiary" />
         </LinearLayout>
 
-        <!-- Bottom Control Panel (taller padding) -->
+        <!-- Bottom Control Panel -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -145,12 +145,21 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:paddingTop="20dp"
-                android:paddingBottom="24dp">
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="20dp">
 
-                <!-- Style selector -->
+                <!-- Section: Style -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="STYLE"
+                    android:textSize="11sp"
+                    android:textColor="@color/md_theme_onSurfaceVariant"
+                    android:letterSpacing="0.1"
+                    android:layout_marginBottom="6dp" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -169,178 +178,123 @@
                             android:id="@+id/chipStyle1"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="44dp"
+                            android:layout_height="36dp"
                             android:text="Standard"
-                            android:textSize="16sp"
+                            android:textSize="13sp"
                             android:checked="true" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle2"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="44dp"
-                            android:text="Blur Border"
-                            android:textSize="16sp" />
+                            android:layout_height="36dp"
+                            android:text="Blur"
+                            android:textSize="13sp" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle3"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="44dp"
+                            android:layout_height="36dp"
                             android:text="Corner"
-                            android:textSize="16sp" />
+                            android:textSize="13sp" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle4"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="44dp"
+                            android:layout_height="36dp"
                             android:text="Classic"
-                            android:textSize="16sp" />
+                            android:textSize="13sp" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle5"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="44dp"
+                            android:layout_height="36dp"
                             android:text="Film"
-                            android:textSize="16sp" />
+                            android:textSize="13sp" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle6"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="44dp"
+                            android:layout_height="36dp"
                             android:text="Label"
-                            android:textSize="16sp" />
+                            android:textSize="13sp" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle7"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="44dp"
+                            android:layout_height="36dp"
                             android:text="Strip"
-                            android:textSize="16sp" />
+                            android:textSize="13sp" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle8"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="44dp"
+                            android:layout_height="36dp"
                             android:text="Badge"
-                            android:textSize="16sp" />
+                            android:textSize="13sp" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle9"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="44dp"
-                            android:text="Cinematic"
-                            android:textSize="16sp" />
+                            android:layout_height="36dp"
+                            android:text="Cinema"
+                            android:textSize="13sp" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle10"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="44dp"
-                            android:text="Transparent"
-                            android:textSize="16sp" />
+                            android:layout_height="36dp"
+                            android:text="Transp."
+                            android:textSize="13sp" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle11"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="44dp"
-                            android:text="F1 Logo"
-                            android:textSize="16sp" />
+                            android:layout_height="36dp"
+                            android:text="F1"
+                            android:textSize="13sp" />
                     </com.google.android.material.chip.ChipGroup>
 
                     <ImageView
                         android:id="@+id/ivStylePreview"
-                        android:layout_width="64dp"
-                        android:layout_height="28dp"
-                        android:layout_marginStart="4dp"
+                        android:layout_width="48dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="6dp"
                         android:scaleType="fitCenter"
                         android:contentDescription="Style preview" />
                 </LinearLayout>
 
-                <!-- Color mode chips (only for style 1) -->
+                <!-- Pick color chip (added dynamically) -->
                 <com.google.android.material.chip.ChipGroup
                     android:id="@+id/colorChipGroup"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     app:singleSelection="true"
-                    app:chipSpacingHorizontal="4dp"
-                    android:layout_marginTop="12dp">
+                    app:chipSpacingHorizontal="6dp"
+                    android:layout_marginTop="10dp" />
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipVibrant"
-                        style="@style/Widget.Material3.Chip.Filter"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:text="Vibrant"
-                        android:textSize="14sp" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipOriginal"
-                        style="@style/Widget.Material3.Chip.Filter"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:text="Original"
-                        android:textSize="14sp" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipBarbie"
-                        style="@style/Widget.Material3.Chip.Filter"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:text="Barbie"
-                        android:textSize="14sp" />
-                </com.google.android.material.chip.ChipGroup>
-
-                <!-- Switches row 1: Params / Date -->
+                <!-- Section: Owner -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:orientation="horizontal"
-                    android:layout_marginTop="8dp">
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switchParams"
-                        android:layout_width="0dp"
-                        android:layout_height="44dp"
-                        android:layout_weight="1"
-                        android:text="Params"
-                        android:textSize="14sp"
-                        android:textColor="@color/md_theme_onSurface"
-                        android:checked="true" />
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switchDate"
-                        android:layout_width="0dp"
-                        android:layout_height="44dp"
-                        android:layout_weight="1"
-                        android:text="Date"
-                        android:textSize="14sp"
-                        android:textColor="@color/md_theme_onSurface"
-                        android:checked="true" />
-                </LinearLayout>
-
-                <!-- Owner name input -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginTop="4dp">
+                    android:gravity="center_vertical">
 
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="56dp"
                         android:layout_height="wrap_content"
-                        android:text="@"
-                        android:textSize="14sp"
-                        android:textColor="@color/md_theme_onSurfaceVariant"
-                        android:layout_marginEnd="4dp" />
+                        android:text="Owner"
+                        android:textSize="13sp"
+                        android:textColor="@color/md_theme_onSurface" />
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="0dp"
@@ -354,7 +308,7 @@
                             android:id="@+id/etOwnerName"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="Photo owner name"
+                            android:hint="@stephen"
                             android:maxLines="1"
                             android:textSize="14sp"
                             android:inputType="textPersonName|textNoSuggestions"
@@ -362,29 +316,101 @@
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
 
-                <!-- Switches row 2: White Text / White Background -->
+                <!-- Divider -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/md_theme_outlineVariant"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="6dp" />
+
+                <!-- Section: Toggles - clean 2-column grid -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="TOGGLES"
+                    android:textSize="11sp"
+                    android:textColor="@color/md_theme_onSurfaceVariant"
+                    android:letterSpacing="0.1"
+                    android:layout_marginBottom="4dp" />
+
+                <!-- Row: Params | Date -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="44dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchParams"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:text="Params"
+                        android:textSize="13sp"
+                        android:textColor="@color/md_theme_onSurface"
+                        android:checked="true" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchDate"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:text="Date"
+                        android:textSize="13sp"
+                        android:textColor="@color/md_theme_onSurface"
+                        android:checked="true" />
+                </LinearLayout>
+
+                <!-- Row: Logo | PNG -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchLogo"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:text="Logo"
+                        android:textSize="13sp"
+                        android:textColor="@color/md_theme_onSurface"
+                        android:checked="true" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchPng"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:text="PNG"
+                        android:textSize="13sp"
+                        android:textColor="@color/md_theme_onSurface"
+                        android:checked="true" />
+                </LinearLayout>
+
+                <!-- Row: White Text | White BG -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
                     android:orientation="horizontal">
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
                         android:id="@+id/switchWhiteText"
                         android:layout_width="0dp"
-                        android:layout_height="44dp"
+                        android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:text="White"
-                        android:textSize="14sp"
+                        android:text="White Text"
+                        android:textSize="13sp"
                         android:textColor="@color/md_theme_onSurface"
                         android:checked="false" />
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
                         android:id="@+id/switchWhiteBg"
                         android:layout_width="0dp"
-                        android:layout_height="44dp"
+                        android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:text="WhiteBg"
-                        android:textSize="14sp"
+                        android:text="White BG"
+                        android:textSize="13sp"
                         android:textColor="@color/md_theme_onSurface"
                         android:checked="false" />
                 </LinearLayout>

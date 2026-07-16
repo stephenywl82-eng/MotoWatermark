@@ -11,6 +11,8 @@ object DeviceMapper {
         "XT2653" to "Razr 70 Ultra",
         "XT2651" to "Razr 70",
         "XT2651-4" to "Razr fold",
+        "XT2655" to "moto razr 70 Ultra",
+        "XT2655-4" to "moto razr 70 Ultra",
         "XT2601" to "Edge 70 Ultra",
         "XT2601-1" to "Edge 70",
         "XT2637" to "Edge 70 Pro",

@@ -50,13 +50,15 @@ class MainActivity : AppCompatActivity() {
     private var showParams = true
     private var showDate = true
     private var richSaturation = false
-    private var originalColor = false
+    private var originalColor = true
     private var barbiePink = false
     private var currentStyle = 1
     private var manualPickColor: Int? = null
     private var useWhiteText: Boolean? = null
     private var useWhiteBg = false
     private var ownerName = ""
+    private var showLogo = true
+    private var usePng = true
     private var isPickMode = false             // 鏄惁澶勪簬鍙栬壊妯″紡
     /** ChipGroup 瀛怌hip鍒楄〃 */
     private fun android.view.ViewGroup.chipChildren() =
@@ -73,7 +75,7 @@ class MainActivity : AppCompatActivity() {
         val srcPixels = opts.outWidth.toLong() * opts.outHeight.toLong()
         if (srcPixels <= maxPixels) {
             opts.inJustDecodeBounds = false
-            opts.inPreferredConfig = Bitmap.Config.RGB_565
+            opts.inPreferredConfig = Bitmap.Config.ARGB_8888
             return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
                 ?: throw IOException("Cannot decode image")
         }
@@ -87,7 +89,7 @@ class MainActivity : AppCompatActivity() {
         while (maxDim / sampleSize > 4096) sampleSize *= 2
         opts.inJustDecodeBounds = false
         opts.inSampleSize = sampleSize
-        opts.inPreferredConfig = Bitmap.Config.RGB_565
+        opts.inPreferredConfig = Bitmap.Config.ARGB_8888
         val sampled = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
             ?: throw IOException("Cannot decode image")
         val scaled = Bitmap.createScaledBitmap(sampled, targetW, targetH, true)
@@ -105,14 +107,19 @@ class MainActivity : AppCompatActivity() {
         prefs = getSharedPreferences("moto_wm_prefs", MODE_PRIVATE)
         showParams = prefs.getBoolean("show_params", true)
         showDate = prefs.getBoolean("show_date", true)
+        showLogo = prefs.getBoolean("show_logo", true)
+        usePng = prefs.getBoolean("use_png", true)
+        showDate = prefs.getBoolean("show_date", true)
         richSaturation = prefs.getBoolean("rich_sat", false)
         originalColor = prefs.getBoolean("original_color", false)
         barbiePink = prefs.getBoolean("barbie_pink", false)
         currentStyle = prefs.getInt("style", 1)
         ownerName = prefs.getString("owner_name", "") ?: ""
+        usePng = prefs.getBoolean("use_png", true)
 
         // 鎭㈠鎺т欢鐘舵€?        binding.switchParams.isChecked = showParams
         binding.switchDate.isChecked = showDate
+        binding.switchLogo.isChecked = showLogo
         when (currentStyle) {
             1 -> binding.chipStyle1.isChecked = true
             2 -> binding.chipStyle2.isChecked = true
@@ -126,10 +133,7 @@ class MainActivity : AppCompatActivity() {
             10 -> binding.chipStyle10.isChecked = true
             11 -> binding.chipStyle11.isChecked = true
         }
-        if (richSaturation) binding.chipVibrant.isChecked = true
-        if (originalColor) binding.chipOriginal.isChecked = true
-        if (barbiePink) binding.chipBarbie.isChecked = true
-        binding.colorChipGroup.visibility = View.VISIBLE  // 鍙栬壊妯″紡2/3涔熸敮鎸?
+        binding.colorChipGroup.visibility = View.VISIBLE
         // 馃敶 鍔ㄦ€佹彃鍏?鍙栬壊" chip
         val pickChip = com.google.android.material.chip.Chip(this).apply {
             id = pickChipId
@@ -209,6 +213,18 @@ class MainActivity : AppCompatActivity() {
             applyWatermarkAndShow()
         }
 
+        // PNG / JPEG switch
+        binding.switchLogo.setOnCheckedChangeListener { _, isChecked ->
+            showLogo = isChecked
+            prefs.edit().putBoolean("show_logo", isChecked).apply()
+            applyWatermarkAndShow()
+        }
+
+        binding.switchPng.setOnCheckedChangeListener { _, isChecked ->
+            usePng = isChecked
+            prefs.edit().putBoolean("use_png", isChecked).apply()
+        }
+
         // Style chip group
         binding.styleChipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
             currentStyle = when {
@@ -228,7 +244,7 @@ class MainActivity : AppCompatActivity() {
             prefs.edit().putInt("style", currentStyle).apply()
             // 妯″紡2/3闅愯棌棰滆壊妯″紡chip锛屼繚鐣欏彇鑹瞔hip
             val colorModeChips = binding.colorChipGroup.chipChildren()
-                .filter { it.id == R.id.chipVibrant || it.id == R.id.chipOriginal || it.id == R.id.chipBarbie }
+                .filter { false }
             colorModeChips.forEach { it.visibility = if (currentStyle == 1 || currentStyle == 4 || currentStyle == 5 || currentStyle == 6 || currentStyle == 7 || currentStyle == 8 || currentStyle == 9 || currentStyle == 10 || currentStyle == 11) View.VISIBLE else View.GONE }
             binding.colorChipGroup.visibility = View.VISIBLE
             updateStylePreview()
@@ -242,7 +258,7 @@ class MainActivity : AppCompatActivity() {
                 isPickMode = true
                 // 鍙栨秷鍏朵粬棰滆壊妯″紡
                 binding.colorChipGroup.chipChildren()
-                    .filter { it.id == R.id.chipVibrant || it.id == R.id.chipOriginal || it.id == R.id.chipBarbie }
+                    .filter { false }
                     .forEach { it.isChecked = false }
             } else if (checkedIds.isEmpty() || checkedIds.all { it == pickChipId }) {
                 isPickMode = false
@@ -251,9 +267,9 @@ class MainActivity : AppCompatActivity() {
                 manualPickColor = null
                 binding.colorChipGroup.chipChildren()
                     .find { it.id == pickChipId }?.isChecked = false
-                richSaturation = checkedIds.contains(R.id.chipVibrant)
-                originalColor = checkedIds.contains(R.id.chipOriginal)
-                barbiePink = checkedIds.contains(R.id.chipBarbie)
+                richSaturation = false
+                originalColor = true
+                barbiePink = false
                 prefs.edit()
                     .putBoolean("rich_sat", richSaturation)
                     .putBoolean("original_color", originalColor)
@@ -262,9 +278,9 @@ class MainActivity : AppCompatActivity() {
                 applyWatermarkAndShow()
                 return@setOnCheckedStateChangeListener
             }
-            richSaturation = checkedIds.contains(R.id.chipVibrant)
-            originalColor = checkedIds.contains(R.id.chipOriginal)
-            barbiePink = checkedIds.contains(R.id.chipBarbie)
+            richSaturation = false
+            originalColor = true
+            barbiePink = false
             prefs.edit()
                 .putBoolean("rich_sat", richSaturation)
                 .putBoolean("original_color", originalColor)
@@ -399,15 +415,15 @@ class MainActivity : AppCompatActivity() {
 
                     withContext(Dispatchers.IO) {
                         val values = ContentValues().apply {
-                            put(MediaStore.Images.Media.DISPLAY_NAME, "MotoWM_${System.currentTimeMillis()}_$index.jpg")
-                            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                            put(MediaStore.Images.Media.DISPLAY_NAME, "MotoWM_${System.currentTimeMillis()}_$index${if (usePng) ".png" else ".jpg"}")
+                            put(MediaStore.Images.Media.MIME_TYPE, if (usePng) "image/png" else "image/jpeg")
                             put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
                         }
                         val uriOut = contentResolver.insert(
                             MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values
                         ) ?: throw IOException("Cannot create MediaStore entry")
                         contentResolver.openOutputStream(uriOut)?.use { output ->
-                            watermarked.compress(Bitmap.CompressFormat.JPEG, 95, output)
+                            watermarked.compress(if (usePng) Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG, 100, output)
                         } ?: throw IOException("Cannot open output stream")
 
                         if (bitmap != watermarked) bitmap.recycle()
@@ -498,6 +514,7 @@ class MainActivity : AppCompatActivity() {
                 val info = buildWatermarkInfo(bitmap).copy(
                     showParams = showParams,
                     showDate = showDate,
+                    showLogo = showLogo,
                     style = currentStyle,
                     richSaturation = richSaturation,
                     originalColor = originalColor,
@@ -603,15 +620,15 @@ class MainActivity : AppCompatActivity() {
             try {
                 val uri = withContext(Dispatchers.IO) {
                     val values = ContentValues().apply {
-                        put(MediaStore.Images.Media.DISPLAY_NAME, "MotoWM_${System.currentTimeMillis()}.jpg")
-                        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                        put(MediaStore.Images.Media.DISPLAY_NAME, "MotoWM_${System.currentTimeMillis()}${if (usePng) ".png" else ".jpg"}")
+                        put(MediaStore.Images.Media.MIME_TYPE, if (usePng) "image/png" else "image/jpeg")
                         put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
                     }
                     contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
                 } ?: throw IOException("Cannot create MediaStore entry")
 
                 contentResolver.openOutputStream(uri)?.use { output ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 95, output)
+                    bitmap.compress(if (usePng) Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG, 100, output)
                 } ?: throw IOException("Cannot open output stream")
 
                 withContext(Dispatchers.Main) {

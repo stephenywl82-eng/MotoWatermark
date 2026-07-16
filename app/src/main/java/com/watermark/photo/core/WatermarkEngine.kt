@@ -418,6 +418,9 @@ object WatermarkEngine {
             canvas.drawText(buildParamString(info), barCenterX, row3Y + paramPaint.textSize * 0.36f, paramPaint)
         }
         // Row 4: Date (smallest text, with shadow)
+        // When params are hidden, center date vertically in the empty space
+        val dateY = if (!info.showParams) barTop + rowH * 2.35f  // between name and bottom
+                    else row4Y
         if (info.showDate) {
             val datePaint = Paint()
             datePaint.color = paramColor
@@ -425,7 +428,7 @@ object WatermarkEngine {
             datePaint.typeface = getMontserratTypeface(context)
             datePaint.textAlign = Paint.Align.CENTER
             datePaint.setShadowLayer(rowH * 0.025f, 0f, rowH * 0.02f, Color.argb(100, 0, 0, 0))
-            canvas.drawText(info.date, barCenterX, row4Y + datePaint.textSize * 0.36f, datePaint)
+            canvas.drawText(info.date, barCenterX, dateY + datePaint.textSize * 0.36f, datePaint)
         }
 
         // Owner name below date
@@ -595,72 +598,69 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
 
         // Motorola logo 图片（着色替换文字 "motorola"）
         val logo = getMotorolaLogo(context)
-        if (logo != null && !logo.isRecycled) {
-            val logoStartX = startX + barH * 0.06f
-            val desiredLogoH = barH * 0.257f
-            val logoW = (logo.width.toFloat() / logo.height) * desiredLogoH
-            val maxLogoW = barH * 1.05f
-            val (actualLogoW, actualLogoH) = if (logoW > maxLogoW) {
-                maxLogoW to (maxLogoW / (logo.width.toFloat() / logo.height))
-            } else {
-                logoW to desiredLogoH
-            }
+        val logoStartX = startX + barH * 0.06f
+        val desiredLogoH = barH * 0.257f
+        val logoRatio = logo?.let { it.width.toFloat() / it.height } ?: (118f / 31f)
+        val logoW = logoRatio * desiredLogoH
+        val maxLogoW = barH * 1.05f
+        val (actualLogoW, actualLogoH) = if (logoW > maxLogoW) {
+            maxLogoW to (maxLogoW / logoRatio)
+        } else {
+            logoW to desiredLogoH
+        }
 
-            val hasOwnerName = info.ownerName.isNotBlank()
-            val nameSize = desiredLogoH * 0.60f
-            val atSize = nameSize * 1.25f
-            // Gap between logo bottom and @name baseline — bigger separation
-            val nameGap = nameSize * 1.30f
-            // Total group height: logo + gap + @name text
-            val groupH = if (hasOwnerName) actualLogoH + nameGap + atSize else actualLogoH
-            // Center, then offset down 20% only when owner name is shown
-            val freeSpace = barH - groupH
-            val groupTop = if (hasOwnerName) barTop + freeSpace / 2f + freeSpace * 0.20f else barTop + freeSpace / 2f
-            val logoTop = groupTop
+        val hasOwnerName = info.ownerName.isNotBlank()
+        val nameSize = desiredLogoH * 0.60f
+        val atSize = nameSize * 1.25f
+        val nameGap = nameSize * 1.30f
+        val groupH = if (hasOwnerName) actualLogoH + nameGap + atSize else actualLogoH
+        val freeSpace = barH - groupH
+        val groupTop = if (hasOwnerName) barTop + freeSpace / 2f + freeSpace * 0.20f else barTop + freeSpace / 2f
+        val logoTop = groupTop
 
+        // Draw logo only when enabled
+        if (info.showLogo && logo != null && !logo.isRecycled) {
             val tinted = tintBitmap(logo, textColor)
             canvas.drawBitmap(tinted, null, RectF(logoStartX, logoTop, logoStartX + actualLogoW, logoTop + actualLogoH), null)
             tinted.recycle()
+        }
 
-            if (suffix.isNotEmpty()) {
-                val suffixPaint = Paint().apply {
-                    color = textColor
-                    textSize = 0.2406f * barH
-                    this.typeface = typeface
-                    textAlign = Paint.Align.LEFT
-                    isFakeBoldText = false
-                }
-                // Vertically centered on logo (same row), not on bar
-                val suffixCenterY = logoTop + actualLogoH / 2f
-                val suffixBaseline = suffixCenterY + suffixPaint.textSize * 0.38f
-                val suffixX = logoStartX + actualLogoW + barH * 0.0693f
-                canvas.drawText(suffix.lowercase(), suffixX, suffixBaseline, suffixPaint)
+        // Suffix always at same position (right of the reserved logo space)
+        if (suffix.isNotEmpty()) {
+            val suffixPaint = Paint().apply {
+                color = textColor
+                textSize = 0.2406f * barH
+                this.typeface = typeface
+                textAlign = Paint.Align.LEFT
+                isFakeBoldText = false
             }
+            val suffixCenterY = logoTop + actualLogoH / 2f
+            val suffixBaseline = suffixCenterY + suffixPaint.textSize * 0.38f
+            val suffixX = if (info.showLogo) logoStartX + actualLogoW + barH * 0.0693f else logoStartX
+            canvas.drawText(suffix.lowercase(), suffixX, suffixBaseline, suffixPaint)
+        }
 
-            // Owner name below logo
-            if (hasOwnerName) {
-                val atPaint = Paint().apply {
-                    color = Color.argb(180, Color.red(textColor), Color.green(textColor), Color.blue(textColor))
-                    textSize = atSize
-                    this.typeface = typeface
-                    textAlign = Paint.Align.LEFT
-                    isFakeBoldText = false
-                }
-                val namePaint = Paint().apply {
-                    color = Color.argb(180, Color.red(textColor), Color.green(textColor), Color.blue(textColor))
-                    textSize = nameSize
-                    this.typeface = typeface
-                    textAlign = Paint.Align.LEFT
-                    isFakeBoldText = false
-                }
-                // @ and name share baseline, positioned at logo bottom + gap
-                val ownerY = logoTop + actualLogoH + nameGap
-                canvas.drawText("@", logoStartX, ownerY, atPaint)
-                val atWidth = atPaint.measureText("@")
-                // name text slightly offset to visually align baseline with @
-                val nameOffset = (atSize - nameSize) * 0.35f
-                canvas.drawText(info.ownerName, logoStartX + atWidth, ownerY - nameOffset, namePaint)
+        // Owner name below logo (same position regardless of logo visibility)
+        if (hasOwnerName) {
+            val atPaint = Paint().apply {
+                color = Color.argb(180, Color.red(textColor), Color.green(textColor), Color.blue(textColor))
+                textSize = atSize
+                this.typeface = typeface
+                textAlign = Paint.Align.LEFT
+                isFakeBoldText = false
             }
+            val namePaint = Paint().apply {
+                color = Color.argb(180, Color.red(textColor), Color.green(textColor), Color.blue(textColor))
+                textSize = nameSize
+                this.typeface = typeface
+                textAlign = Paint.Align.LEFT
+                isFakeBoldText = false
+            }
+            val ownerY = logoTop + actualLogoH + nameGap
+            canvas.drawText("@", logoStartX, ownerY, atPaint)
+            val atWidth = atPaint.measureText("@")
+            val nameOffset = (atSize - nameSize) * 0.35f
+            canvas.drawText(info.ownerName, logoStartX + atWidth, ownerY - nameOffset, namePaint)
         }
     }
 
@@ -707,7 +707,7 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             canvas.drawText(buildParamString(info), rightX, paramY, paramPaint)
         }
 
-        // date line — 下方 69% 位置，与参数行间距收拢
+        // date line — 下方 69% 位置，与参数行间距收拢；如果只有日期则垂直居中
         if (info.showDate) {
             val datePaint = Paint()
             datePaint.color = fadeColor(textColor, 0.17f)
@@ -716,7 +716,9 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             datePaint.letterSpacing = 0.015f
             datePaint.textAlign = Paint.Align.RIGHT
             val dateTextSize = datePaint.textSize
-            canvas.drawText(info.date, rightX, barTop + 0.69f * barH + 0.35f * dateTextSize, datePaint)
+            val dateY = if (!info.showParams) barTop + barH / 2f + 0.38f * dateTextSize
+                        else barTop + 0.69f * barH + 0.35f * dateTextSize
+            canvas.drawText(info.date, rightX, dateY, datePaint)
         }
     }
 
@@ -761,6 +763,25 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
 
             val textLeftX = rightX - measurePaint.measureText(paramText)
             val lineX = textLeftX - barH * 0.2415f
+            drawMode4VerticalLine(canvas, lineX, barH, barTop, textColor)
+            drawMode4Logo(canvas, lineX, barH, barTop, textColor, context, info)
+            return
+        }
+
+        // Only date — right-aligned, vertically centered
+        if (info.showDate && !info.showParams) {
+            val datePaint = Paint().apply {
+                color = fadeColor(textColor, 0.2f)
+                textSize = 0.17765f * barH
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+                letterSpacing = 0.015f
+                textAlign = Paint.Align.RIGHT
+            }
+            val dateTextSize = datePaint.textSize
+            val dateCenterY = barTop + barH / 2f + 0.38f * dateTextSize
+            canvas.drawText(dateNoTime, rightX, dateCenterY, datePaint)
+
+            val lineX = rightX - measureDatePaint.measureText(dateNoTime) - barH * 0.2415f
             drawMode4VerticalLine(canvas, lineX, barH, barTop, textColor)
             drawMode4Logo(canvas, lineX, barH, barTop, textColor, context, info)
             return
@@ -890,7 +911,9 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             datePaint.letterSpacing = 0.015f
             datePaint.textAlign = Paint.Align.RIGHT
             val dateTextSize = datePaint.textSize
-            canvas.drawText(info.date, rightX, barTop + 0.69f * barH + 0.35f * dateTextSize, datePaint)
+            val dateY = if (!info.showParams) barTop + barH / 2f + 0.38f * dateTextSize
+                        else barTop + 0.69f * barH + 0.35f * dateTextSize
+            canvas.drawText(info.date, rightX, dateY, datePaint)
         }
     }
 
@@ -1594,7 +1617,7 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         val h = source.height
         val spec = WatermarkMath.computeLayoutSpec(w, h)
         val outputH = if (info.style == 1 || info.style == 4 || info.style == 11) h + spec.barH.toInt() else h
-        val output = Bitmap.createBitmap(w, outputH, Bitmap.Config.RGB_565)
+        val output = Bitmap.createBitmap(w, outputH, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
         val colorScheme = when {
             info.manualPickColor != null -> {
