@@ -18,97 +18,12 @@ object WatermarkEngine {
 
     // ==================== 辅助方法 ====================
 
-    private fun adjustColorForContrast(textColor: Int, bgColor: Int): Int {
-        val bgLum = (((Color.red(bgColor) * 0.299f) + (Color.green(bgColor) * 0.587f)) + (Color.blue(bgColor) * 0.114f)) / 255.0f
-        val colorLum = (((Color.red(textColor) * 0.299f) + (Color.green(textColor) * 0.587f)) + (Color.blue(textColor) * 0.114f)) / 255.0f
-        val diff = abs(colorLum - bgLum)
-        if (diff >= 0.12f) return textColor
-        val adjust = 0.12f - diff
-        return if (bgLum > 0.5f) {
-            val delta = (adjust * 255).toInt()
-            Color.rgb(
-                kMax(0, Color.red(textColor) - delta),
-                kMax(0, Color.green(textColor) - delta),
-                kMax(0, Color.blue(textColor) - delta)
-            )
-        } else {
-            val delta = (adjust * 255).toInt()
-            Color.rgb(
-                kMin(255, Color.red(textColor) + delta),
-                kMin(255, Color.green(textColor) + delta),
-                kMin(255, Color.blue(textColor) + delta)
-            )
-        }
-    }
-
     /** 颜色淡化：向白色混合 fadeRatio（0~1），比直接调 alpha 更稳定 */
     private fun fadeColor(color: Int, fadeRatio: Float): Int {
         val r = (Color.red(color) + (255 - Color.red(color)) * fadeRatio).toInt()
         val g = (Color.green(color) + (255 - Color.green(color)) * fadeRatio).toInt()
         val b = (Color.blue(color) + (255 - Color.blue(color)) * fadeRatio).toInt()
         return Color.rgb(r, g, b)
-    }
-
-    private fun blendForContrast(accent: Int, baseContrast: Int, blendRatio: Float): Int {
-        val inv = 1 - blendRatio
-        return adjustColorForContrast(
-            Color.rgb(
-                ((Color.red(baseContrast) * blendRatio) + (Color.red(accent) * inv)).toInt().coerceIn(0, 255),
-                ((Color.green(baseContrast) * blendRatio) + (Color.green(accent) * inv)).toInt().coerceIn(0, 255),
-                ((Color.blue(baseContrast) * blendRatio) + (Color.blue(accent) * inv)).toInt().coerceIn(0, 255)
-            ),
-            baseContrast
-        )
-    }
-
-    private fun blendWithAccentMode2(base: Int, accent: Int, ratio: Float): Int {
-        val inv = 1 - ratio
-        return Color.rgb(
-            ((Color.red(base) * inv) + (Color.red(accent) * ratio)).toInt().coerceIn(0, 255),
-            ((Color.green(base) * inv) + (Color.green(accent) * ratio)).toInt().coerceIn(0, 255),
-            ((Color.blue(base) * inv) + (Color.blue(accent) * ratio)).toInt().coerceIn(0, 255)
-        )
-    }
-
-    private fun boxBlur(source: Bitmap, radius: Int): Bitmap {
-        val w = source.width
-        val h = source.height
-        val pixels = IntArray(w * h)
-        source.getPixels(pixels, 0, w, 0, 0, w, h)
-        val out = IntArray(w * h)
-
-        for (y in 0 until h) {
-            for (x in 0 until w) {
-                var r = 0; var g = 0; var b = 0; var cnt = 0
-                for (dy in -radius..radius) {
-                    for (dx in -radius..radius) {
-                        val px = (x + dx).coerceIn(0, w - 1)
-                        val py = (y + dy).coerceIn(0, h - 1)
-                        val p = pixels[py * w + px]
-                        r += (p shr 16) and 0xFF
-                        g += (p shr 8) and 0xFF
-                        b += p and 0xFF
-                        cnt++
-                    }
-                }
-                out[y * w + x] = (0xFF000000.toInt()) or
-                    (((r / cnt).coerceIn(0, 255)) shl 16) or
-                    (((g / cnt).coerceIn(0, 255)) shl 8) or
-                    ((b / cnt).coerceIn(0, 255))
-            }
-        }
-
-        val result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        result.setPixels(out, 0, w, 0, 0, w, h)
-        return result
-    }
-
-
-
-    private fun clipRoundRect(canvas: Canvas, rect: RectF, rx: Float, ry: Float) {
-        val path = Path()
-        path.addRoundRect(rect, rx, ry, Path.Direction.CW)
-        canvas.clipPath(path)
     }
 
     private fun computeLogoColor(bgColor: Int): Int {
@@ -140,38 +55,6 @@ object WatermarkEngine {
         return result
     }
 
-    private fun contrastRatio(c1: Int, c2: Int): Float {
-        val l1 = (((Color.red(c1) * 0.299f) + (Color.green(c1) * 0.587f)) + (Color.blue(c1) * 0.114f)) / 255.0f
-        val l2 = (((Color.red(c2) * 0.299f) + (Color.green(c2) * 0.587f)) + (Color.blue(c2) * 0.114f)) / 255.0f
-        return (kotlin.math.max(l1, l2) + 0.05f) / (kotlin.math.min(l1, l2) + 0.05f)
-    }
-
-    private fun createBlurredBackground(source: Bitmap): Bitmap {
-        // 限制最大输出尺寸，避免大图OOM
-        val maxDim = 1920
-        val div = 8  // 下采样除数（越小细节越多，模糊越平滑）
-        val scale = minOf(1.0f, maxDim.toFloat() / maxOf(source.width, source.height))
-        val smallW = maxOf((source.width * scale / div).toInt(), 4)
-        val smallH = maxOf((source.height * scale / div).toInt(), 4)
-        val small = Bitmap.createScaledBitmap(source, smallW, smallH, true)
-        // 双缓冲 boxBlur（14 pass），避免反复分配临时位图
-        var cur = boxBlur(small, 8)
-        small.recycle()
-        repeat(8) {
-            val next = boxBlur(cur, 8)
-            cur.recycle()
-            cur = next
-        }
-        // 输出 ARGB_8888 避免 RGB_565 色深不足导致的条带
-        val outW = minOf(source.width, (source.width * scale).toInt())
-        val outH = minOf(source.height, (source.height * scale).toInt())
-        val result = Bitmap.createBitmap(outW, outH, Bitmap.Config.ARGB_8888)
-        val resultCanvas = Canvas(result)
-        resultCanvas.drawBitmap(cur, null, RectF(0f, 0f, outW.toFloat(), outH.toFloat()), Paint(Paint.FILTER_BITMAP_FLAG))
-        cur.recycle()
-        return result
-    }
-
     private fun tintBitmap(source: Bitmap, color: Int): Bitmap {
         val out = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(out)
@@ -190,6 +73,17 @@ object WatermarkEngine {
             }
         }
         return montserratTypeface!!
+    }
+
+    /** v1.1.4：计算让 namePaint 的文字与其上方 "@" 视觉居中所需的 baseline 偏移。
+     *  以真实墨迹框 getTextBounds 中心为基准，含降部字母/纯大写/中文名字都能对齐。 */
+    private fun nameBaselineOffset(atPaint: Paint, namePaint: Paint, name: String): Float {
+        val rb = Rect()
+        atPaint.getTextBounds("@", 0, 1, rb)
+        val atCenter = (rb.top + rb.bottom) / 2f
+        namePaint.getTextBounds(name, 0, name.length, rb)
+        val nmCenter = (rb.top + rb.bottom) / 2f
+        return atCenter - nmCenter
     }
 
     private fun buildParamString(info: WatermarkInfo): String {
@@ -249,211 +143,6 @@ object WatermarkEngine {
 
         // 右侧参数 + 日期 + FIFA Logo
         drawRightSection(canvas, srcW, barTop, barHeight, info, leftTextColor, mutedColor, context, isPortrait, info.style)
-    }
-
-    private fun drawBlurFrameMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: Int, spec: WatermarkMath.LayoutSpec, info: WatermarkInfo, colorScheme: SmartColorExtractor.ColorScheme, context: Context) {
-        // 模糊背景（全屏）
-        val blurred = createBlurredBackground(source)
-        canvas.drawBitmap(blurred, null, RectF(0f, 0f, srcW.toFloat(), srcH.toFloat()), null)
-        blurred.recycle()
-
-        // 预留底部水印条空间
-        val barAreaH = spec.barH * 1.6f
-        val frameMargin = srcW * 0.018f
-        val frameW = srcW - frameMargin * 2
-        val frameH = srcH - frameMargin * 2 - barAreaH // 减去水印条高度
-        val centerX = srcW / 2f
-        val centerY = (srcH - barAreaH) / 2f // 垂直居中于剩余空间
-
-        // 根据图片宽高比计算帧尺寸
-        val imgRatio = source.width.toFloat() / source.height
-        val (frameW2, frameH2) = if (imgRatio > frameW / frameH) {
-            frameW to (frameW / imgRatio)
-        } else {
-            (imgRatio * frameH) to frameH
-        }
-
-        val halfW = frameW2 / 2f
-        val halfH = frameH2 / 2f
-        val left = centerX - halfW
-        val top = centerY - halfH
-        val right = centerX + halfW
-        val bottom = centerY + halfH
-
-        // 四周暗角渐变
-        val edge = srcW * 0.10f
-        val gradientPaint = Paint()
-        gradientPaint.shader = LinearGradient(left, 0f, left - edge, 0f, intArrayOf(0, Color.argb(30, 0, 0, 0)), null, Shader.TileMode.CLAMP)
-        canvas.drawRect(0f, 0f, left, srcH.toFloat(), gradientPaint)
-        gradientPaint.shader = LinearGradient(right, 0f, right + edge, 0f, intArrayOf(0, Color.argb(30, 0, 0, 0)), null, Shader.TileMode.CLAMP)
-        canvas.drawRect(right, 0f, srcW.toFloat(), srcH.toFloat(), gradientPaint)
-        gradientPaint.shader = LinearGradient(0f, top, 0f, top - edge, intArrayOf(0, Color.argb(25, 0, 0, 0)), null, Shader.TileMode.CLAMP)
-        canvas.drawRect(0f, 0f, srcW.toFloat(), top, gradientPaint)
-
-        // 多层阴影 — 渲染到软件位图（BlurMaskFilter 在硬件加速 Canvas 无效）
-        val shadowCorner = frameW2 * 0.04f
-        val shadowLayers = listOf(
-            Triple(0f, 40f, 12) to 30f,
-            Triple(0f, 28f, 20) to 22f,
-            Triple(0f, 18f, 32) to 16f,
-            Triple(0f, 10f, 48) to 10f,
-            Triple(0f, 4f, 80) to 5f,
-            Triple(0f, 0f, 100) to 2f
-        )
-        val maxBlur = 30f
-        val maxOffset = 40f
-        val shadowPad = (maxBlur + maxOffset + shadowCorner + 4f).toInt()
-        val shadowLeft = (left - shadowPad).coerceAtLeast(0f)
-        val shadowTop = (top - shadowPad).coerceAtLeast(0f)
-        val shadowRight = (right + shadowPad).coerceAtMost(srcW.toFloat())
-        val shadowBottom = (bottom + shadowPad).coerceAtMost(srcH.toFloat())
-        val shadowW = (shadowRight - shadowLeft).toInt()
-        val shadowH = (shadowBottom - shadowTop).toInt()
-        if (shadowW > 0 && shadowH > 0) {
-            val shadowScale = 0.25f
-            val shadowBmp = Bitmap.createBitmap(
-                maxOf((shadowW * shadowScale).toInt(), 1),
-                maxOf((shadowH * shadowScale).toInt(), 1),
-                Bitmap.Config.ARGB_8888
-            )
-            val shadowCanv = Canvas(shadowBmp)
-            shadowCanv.scale(shadowScale, shadowScale)
-            shadowCanv.translate(-shadowLeft, -shadowTop)
-            val shadowPaint = Paint()
-            for ((t, blur) in shadowLayers) {
-                val (dx, dy, alpha) = t
-                shadowPaint.color = Color.argb(alpha, 0, 0, 0)
-                shadowPaint.maskFilter = BlurMaskFilter(blur * shadowScale, BlurMaskFilter.Blur.NORMAL)
-                shadowCanv.drawRoundRect(
-                    RectF(left + dx, top + dy, right + dx, bottom + dy),
-                    shadowCorner + blur * 0.5f, shadowCorner + blur * 0.5f, shadowPaint
-                )
-            }
-            shadowPaint.maskFilter = null
-            canvas.save()
-            canvas.translate(shadowLeft, shadowTop)
-            canvas.scale(1f / shadowScale, 1f / shadowScale)
-            canvas.drawBitmap(shadowBmp, 0f, 0f, null)
-            canvas.restore()
-            shadowBmp.recycle()
-        }
-
-        // 绘制照片（圆角）
-        val imgRect = RectF(left, top, right, bottom)
-        canvas.save()
-        clipRoundRect(canvas, imgRect, shadowCorner, shadowCorner)
-        canvas.drawBitmap(source, null, imgRect, Paint())
-        canvas.restore()
-
-        // ===== 底部水印区域：直接在全屏模糊背景上叠加文字 =====
-        // 手动取色优先，否则从照片取色
-        val mode2 = if (info.manualPickColor != null) {
-            val text = if (SmartColorExtractor.luminance(info.manualPickColor) > 0.5f) Color.BLACK else Color.WHITE
-            SmartColorExtractor.Mode2Colors(
-                logoColor = info.manualPickColor,
-                textColor = text,
-                paramColor = SmartColorExtractor.adjustAlpha(text, 0.75f),
-                background = info.manualPickColor
-            )
-        } else {
-            SmartColorExtractor.extractMode2Colors(source)
-        }
-        val logoColor = mode2.logoColor
-        val textColor = mode2.textColor
-        val paramColor = Color.argb(180, Color.red(textColor), Color.green(textColor), Color.blue(textColor))
-
-        // 底部条固定在屏幕底部
-        val barTop = srcH - barAreaH
-
-        // 渐变衬底加深，保证文字在任何背景下可读
-        val scrimPaint = Paint()
-        scrimPaint.shader = LinearGradient(
-            0f, barTop, 0f, srcH.toFloat(),
-            intArrayOf(Color.argb(0, 0, 0, 0), Color.argb(140, 0, 0, 0)),
-            null, Shader.TileMode.CLAMP
-        )
-        canvas.drawRect(0f, barTop, srcW.toFloat(), srcH.toFloat(), scrimPaint)
-
-                // Four-row center layout
-        val barCenterX = srcW / 2f
-        val rowH = barAreaH / 4f
-        val row1Y = barTop + rowH * 0.35f     // Logo center Y
-        val row2Y = barTop + rowH * 1.15f    // Device name center Y
-        val row3Y = barTop + rowH * 1.95f    // Params center Y
-        val row4Y = barTop + rowH * 2.75f    // Date center Y
-
-        // Row 1: Moto Logo (centered) — use white/black PNG based on bg
-        val logoLum = (((Color.red(logoColor) * 0.299f) + (Color.green(logoColor) * 0.587f)) + (Color.blue(logoColor) * 0.114f)) / 255.0f
-        val logoResId = if (logoLum >= 0.5f) R.drawable.mode1_logo_black else R.drawable.mode1_logo_white
-        var motoLogo: Bitmap? = try { BitmapFactory.decodeResource(context.resources, logoResId) } catch (e: Exception) { null }
-        if (motoLogo != null && !motoLogo.isRecycled) {
-            val logoH = rowH * 1.4f
-            val logoW = (motoLogo.width.toFloat() / motoLogo.height) * logoH
-            val logoX = barCenterX - logoW / 2f
-            canvas.drawBitmap(motoLogo, null, RectF(logoX, row1Y - logoH / 2f, logoX + logoW, row1Y + logoH / 2f), null)
-            motoLogo.recycle()
-        }
-
-        // Row 2: Device name (largest text, with shadow)
-        val deviceName = info.deviceName
-            .replace("motorola ", "", ignoreCase = true)
-            .replace("Motorola ", "", ignoreCase = true)
-            .trim()
-        val namePaint = Paint()
-        namePaint.color = textColor
-        namePaint.textSize = rowH * 0.32f
-        namePaint.typeface = Typeface.create(getMontserratTypeface(context), Typeface.BOLD)
-        namePaint.textAlign = Paint.Align.CENTER
-        namePaint.isFakeBoldText = true
-        namePaint.setShadowLayer(rowH * 0.04f, 0f, rowH * 0.03f, Color.argb(80, 0, 0, 0))
-        canvas.drawText(deviceName, barCenterX, row2Y + namePaint.textSize * 0.36f, namePaint)
-        // Row 3: Params (medium text, with shadow)
-        if (info.showParams) {
-            val paramPaint = Paint()
-            paramPaint.color = paramColor
-            paramPaint.textSize = rowH * 0.28f
-            paramPaint.typeface = getMontserratTypeface(context)
-            paramPaint.textAlign = Paint.Align.CENTER
-            paramPaint.setShadowLayer(rowH * 0.03f, 0f, rowH * 0.025f, Color.argb(100, 0, 0, 0))
-            canvas.drawText(buildParamString(info), barCenterX, row3Y + paramPaint.textSize * 0.36f, paramPaint)
-        }
-        // Row 4: Date (smallest text, with shadow)
-        // When params are hidden, center date vertically in the empty space
-        val dateY = if (!info.showParams) barTop + rowH * 2.35f  // between name and bottom
-                    else row4Y
-        if (info.showDate) {
-            val datePaint = Paint()
-            datePaint.color = paramColor
-            datePaint.textSize = rowH * 0.22f
-            datePaint.typeface = getMontserratTypeface(context)
-            datePaint.textAlign = Paint.Align.CENTER
-            datePaint.setShadowLayer(rowH * 0.025f, 0f, rowH * 0.02f, Color.argb(100, 0, 0, 0))
-            canvas.drawText(info.date, barCenterX, dateY + datePaint.textSize * 0.36f, datePaint)
-        }
-
-        // Owner name below date
-        if (info.ownerName.isNotBlank()) {
-            val nameSize = rowH * 0.16f
-            val atSize = nameSize * 1.25f
-            val atPaint = Paint().apply {
-                color = Color.argb(120, 255, 255, 255)
-                textSize = atSize
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.LEFT
-            }
-            val namePaint = Paint().apply {
-                color = Color.argb(120, 255, 255, 255)
-                textSize = nameSize
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.LEFT
-            }
-            val atW = atPaint.measureText("@")
-            val nameW = namePaint.measureText(info.ownerName)
-            val totalW = atW + nameW
-            val ownerY = row4Y + rowH * 0.55f
-            canvas.drawText("@", barCenterX - totalW / 2f, ownerY, atPaint)
-            canvas.drawText(info.ownerName, barCenterX - totalW / 2f + atW, ownerY, namePaint)
-        }
     }
 
 private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: Int, spec: WatermarkMath.LayoutSpec, info: WatermarkInfo, colorScheme: SmartColorExtractor.ColorScheme, context: Context) {
@@ -555,7 +244,7 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             val x = srcW * 0.035f
             val y = srcH * 0.038f
             canvas.drawText("@", x, y, atPaint)
-            canvas.drawText(info.ownerName, x + atPaint.measureText("@"), y, namePaint)
+            canvas.drawText(info.ownerName, x + atPaint.measureText("@"), y + nameBaselineOffset(atPaint, namePaint, info.ownerName), namePaint)
         }
     }
 
@@ -657,10 +346,10 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
                 isFakeBoldText = false
             }
             val ownerY = logoTop + actualLogoH + nameGap
-            canvas.drawText("@", logoStartX, ownerY, atPaint)
             val atWidth = atPaint.measureText("@")
-            val nameOffset = (atSize - nameSize) * 0.35f
-            canvas.drawText(info.ownerName, logoStartX + atWidth, ownerY - nameOffset, namePaint)
+            // [v1.1.4] 名字与 "@" 视觉居中对齐（此前偏高）
+            canvas.drawText("@", logoStartX, ownerY, atPaint)
+            canvas.drawText(info.ownerName, logoStartX + atWidth, ownerY + nameBaselineOffset(atPaint, namePaint, info.ownerName), namePaint)
         }
     }
 
@@ -919,548 +608,13 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
 
     // ==================== Mode 5: Film Frame ====================
 
-    private fun drawFilmFrameMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: Int, spec: WatermarkMath.LayoutSpec, info: WatermarkInfo, colorScheme: SmartColorExtractor.ColorScheme, context: Context) {
-        canvas.drawBitmap(source, 0f, 0f, null)
-
-        val topStripH = srcH * 0.08f
-        val bottomStripH = srcH * 0.10f
-
-        // Top gradient (black → transparent)
-        val topPaint = Paint()
-        topPaint.shader = LinearGradient(
-            0f, 0f, 0f, topStripH,
-            intArrayOf(Color.argb(190, 0, 0, 0), Color.argb(0, 0, 0, 0)),
-            null, Shader.TileMode.CLAMP
-        )
-        canvas.drawRect(0f, 0f, srcW.toFloat(), topStripH, topPaint)
-
-        // Bottom gradient (transparent → black)
-        val bottomTop = srcH - bottomStripH
-        val bottomPaint = Paint()
-        bottomPaint.shader = LinearGradient(
-            0f, bottomTop, 0f, srcH.toFloat(),
-            intArrayOf(Color.argb(0, 0, 0, 0), Color.argb(220, 0, 0, 0)),
-            null, Shader.TileMode.CLAMP
-        )
-        canvas.drawRect(0f, bottomTop, srcW.toFloat(), srcH.toFloat(), bottomPaint)
-
-        // Film sprocket holes on left and right edges
-        val holePaint = Paint().apply {
-            color = Color.argb(50, 255, 255, 255)
-            isAntiAlias = true
-        }
-        val holeRadius = srcW * 0.007f
-        val holeSpacing = srcH * 0.048f
-        val holeStartY = topStripH * 0.6f
-        val holeEndY = bottomTop + bottomStripH * 0.4f
-        for (side in listOf(holeRadius * 2.5f, srcW - holeRadius * 2.5f)) {
-            var y = holeStartY
-            while (y < holeEndY) {
-                canvas.drawCircle(side, y, holeRadius, holePaint)
-                y += holeSpacing
-            }
-        }
-
-        // Text in bottom strip
-        val textWhite = Color.argb(240, 255, 255, 255)
-        val textMuted = Color.argb(160, 255, 255, 255)
-        val centerX = srcW / 2f
-        val deviceName = info.deviceName
-            .replace("motorola ", "", ignoreCase = true)
-            .replace("Motorola ", "", ignoreCase = true)
-            .trim()
-
-        val namePaint = Paint().apply {
-            color = textWhite
-            textSize = bottomStripH * 0.30f
-            typeface = Typeface.create(getMontserratTypeface(context), Typeface.BOLD)
-            textAlign = Paint.Align.CENTER
-            isFakeBoldText = true
-            setShadowLayer(2f, 0f, 1f, Color.argb(100, 0, 0, 0))
-        }
-        val nameY = bottomTop + bottomStripH * 0.38f
-        canvas.drawText(deviceName, centerX, nameY, namePaint)
-
-        if (info.showParams) {
-            val paramPaint = Paint().apply {
-                color = textMuted
-                textSize = bottomStripH * 0.20f
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.CENTER
-            }
-            val paramY = bottomTop + bottomStripH * 0.65f
-            canvas.drawText(buildParamString(info), centerX, paramY, paramPaint)
-        }
-
-        // "FILM" stamp bottom-left
-        val stampPaint = Paint().apply {
-            color = Color.argb(80, 255, 255, 255)
-            textSize = bottomStripH * 0.18f
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
-            textAlign = Paint.Align.LEFT
-        }
-        canvas.drawText("\u25C6 FILM", srcW * 0.03f, srcH - bottomStripH * 0.22f, stampPaint)
-
-        // Owner name bottom-right
-        if (info.ownerName.isNotBlank()) {
-            val nameSize = bottomStripH * 0.16f
-            val atSize = nameSize * 1.25f
-            val atPaint = Paint().apply {
-                color = Color.argb(100, 255, 255, 255)
-                textSize = atSize
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.LEFT
-            }
-            val namePaint = Paint().apply {
-                color = Color.argb(100, 255, 255, 255)
-                textSize = nameSize
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.LEFT
-            }
-            val y = srcH - bottomStripH * 0.08f
-            val nameW = namePaint.measureText(info.ownerName)
-            val atW = atPaint.measureText("@")
-            val totalW = atW + nameW
-            canvas.drawText("@", srcW - srcW * 0.035f - totalW, y, atPaint)
-            canvas.drawText(info.ownerName, srcW - srcW * 0.035f - totalW + atW, y, namePaint)
-        }
-    }
-
     // ==================== Mode 6: Minimalist Label ====================
 
-    private fun drawMinimalistLabelMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: Int, spec: WatermarkMath.LayoutSpec, info: WatermarkInfo, colorScheme: SmartColorExtractor.ColorScheme, context: Context) {
-        canvas.drawBitmap(source, 0f, 0f, null)
-
-        val isPortrait = srcH > srcW
-        val pad = minOf(srcW, srcH) * 0.03f
-
-        // Build label text
-        val deviceName = info.deviceName
-            .replace("motorola ", "", ignoreCase = true)
-            .replace("Motorola ", "", ignoreCase = true)
-            .trim()
-        val hasParams = info.showParams && buildParamString(info).isNotBlank()
-        val dateStr = if (info.showDate && info.date.isNotBlank()) {
-            info.date.replace(Regex("\\s+\\d{1,2}:\\d{2}(:\\d{2})?\\s*[apAP][mM]"), "")
-        } else ""
-
-        // Measure text widths
-        val labelTextSize = minOf(srcW, srcH) * 0.025f
-        val subTextSize = labelTextSize * 0.68f
-
-        val namePaint = Paint().apply {
-            color = Color.WHITE
-            textSize = labelTextSize
-            typeface = Typeface.create(getMontserratTypeface(context), Typeface.BOLD)
-            isFakeBoldText = true
-            textAlign = Paint.Align.LEFT
-        }
-        val nameW = namePaint.measureText(deviceName)
-
-        var maxContentW = nameW
-        val subPaint = Paint().apply {
-            color = Color.argb(200, 255, 255, 255)
-            textSize = subTextSize
-            typeface = getMontserratTypeface(context)
-            textAlign = Paint.Align.LEFT
-        }
-
-        // Build content lines
-        val lines = mutableListOf<Pair<String, Paint>>()
-        lines.add(deviceName to namePaint)
-        if (hasParams) {
-            val paramStr = buildParamString(info)
-            val pw = subPaint.measureText(paramStr)
-            if (pw > maxContentW) maxContentW = pw
-            lines.add(paramStr to subPaint)
-        }
-        if (dateStr.isNotBlank()) {
-            val dw = subPaint.measureText(dateStr)
-            if (dw > maxContentW) maxContentW = dw
-            lines.add(dateStr to subPaint)
-        }
-
-        // Chip background dimensions
-        val chipPadH = labelTextSize * 0.55f
-        val chipPadV = labelTextSize * 0.42f
-        val lineH = labelTextSize * 1.25f
-        val chipW = maxContentW + chipPadH * 2
-        val chipH = lines.size * lineH + chipPadV * 2
-        val cornerR = labelTextSize * 0.45f
-
-        // Position: top-right
-        val chipLeft = srcW - chipW - pad
-        val chipTop = pad
-        val chipRight = chipLeft + chipW
-        val chipBottom = chipTop + chipH
-
-        // Tail triangle pointing down-left
-        val tailSize = labelTextSize * 0.35f
-        val tailPath = Path().apply {
-            moveTo(chipRight - cornerR, chipBottom)
-            lineTo(chipRight - cornerR - tailSize, chipBottom + tailSize)
-            lineTo(chipRight - cornerR - tailSize * 2f, chipBottom)
-            close()
-        }
-
-        // Draw chip background
-        val chipBg = Color.argb(200, Color.red(colorScheme.accent), Color.green(colorScheme.accent), Color.blue(colorScheme.accent))
-        val bgLum = SmartColorExtractor.luminance(chipBg)
-        // Ensure readable label: blend accent with black for dark accent, with white for light accent
-        val finalBg = if (bgLum > 0.45f) {
-            // Light accent: blend toward dark for white text readability
-            blendWithAccentMode2(chipBg, Color.BLACK, 0.5f)
-        } else {
-            chipBg
-        }
-
-        val bgPaint = Paint().apply {
-            color = finalBg
-            isAntiAlias = true
-        }
-        val chipRect = RectF(chipLeft, chipTop, chipRight, chipBottom)
-        canvas.drawRoundRect(chipRect, cornerR, cornerR, bgPaint)
-        canvas.drawPath(tailPath, bgPaint)
-
-        // Draw text lines
-        var lineY = chipTop + chipPadV + labelTextSize * 0.82f
-        for ((text, paint) in lines) {
-            canvas.drawText(text, chipLeft + chipPadH, lineY, paint)
-            lineY += lineH
-        }
-
-        // Owner name — top-left mirror of chip
-        if (info.ownerName.isNotBlank()) {
-            val nameSize = subTextSize * 0.72f
-            val atSize = nameSize * 1.25f
-            val atPaint = Paint().apply {
-                color = Color.argb(140, 255, 255, 255)
-                textSize = atSize
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.LEFT
-            }
-            val namePaint = Paint().apply {
-                color = Color.argb(140, 255, 255, 255)
-                textSize = nameSize
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.LEFT
-            }
-            val y = pad + labelTextSize * 0.9f
-            canvas.drawText("@", pad, y, atPaint)
-            canvas.drawText(info.ownerName, pad + atPaint.measureText("@"), y, namePaint)
-        }
-    }
-
     // ==================== Mode 7: Signature Strip ====================
-
-    private fun drawSignatureStripMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: Int, spec: WatermarkMath.LayoutSpec, info: WatermarkInfo, colorScheme: SmartColorExtractor.ColorScheme, context: Context) {
-        canvas.drawBitmap(source, 0f, 0f, null)
-
-        val stripH = minOf(srcW, srcH) * 0.055f
-        val pad = stripH * 0.20f
-
-        // Semi-transparent dark background strip at top
-        val bgPaint = Paint().apply {
-            color = Color.argb(160, 0, 0, 0)
-            isAntiAlias = true
-        }
-        canvas.drawRoundRect(RectF(0f, 0f, srcW.toFloat(), stripH), 0f, 0f, bgPaint)
-
-        val deviceName = info.deviceName
-            .replace("motorola ", "", ignoreCase = true)
-            .replace("Motorola ", "", ignoreCase = true)
-            .trim()
-
-        // Motorola logo
-        val logo = getMotorolaLogo(context)
-        if (logo != null && !logo.isRecycled) {
-            val logoH = stripH * 0.65f
-            val logoW = (logo.width.toFloat() / logo.height) * logoH
-            val logoX = pad
-            val logoY = (stripH - logoH) / 2f
-            val tinted = tintBitmap(logo, Color.argb(230, 255, 255, 255))
-            canvas.drawBitmap(tinted, null, RectF(logoX, logoY, logoX + logoW, logoY + logoH), null)
-            tinted.recycle()
-
-            // Device name next to logo
-            if (deviceName.isNotEmpty()) {
-                val namePaint = Paint().apply {
-                    color = Color.argb(230, 255, 255, 255)
-                    textSize = stripH * 0.38f
-                    typeface = Typeface.create(getMontserratTypeface(context), Typeface.BOLD)
-                    textAlign = Paint.Align.LEFT
-                    isFakeBoldText = true
-                }
-                val nameBaseline = logoY + logoH * 0.82f
-                val nameX = logoX + logoW + stripH * 0.20f
-                canvas.drawText(deviceName, nameX, nameBaseline, namePaint)
-            }
-        }
-
-        // Params right-aligned
-        if (info.showParams) {
-            val paramStr = buildParamString(info)
-            val paramPaint = Paint().apply {
-                color = Color.argb(180, 255, 255, 255)
-                textSize = stripH * 0.30f
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.RIGHT
-            }
-            val baseline = stripH / 2f + paramPaint.textSize * 0.38f
-            canvas.drawText(paramStr, srcW - pad, baseline, paramPaint)
-        }
-
-        // Owner name bottom-left
-        if (info.ownerName.isNotBlank()) {
-            val nameSize = stripH * 0.22f
-            val atSize = nameSize * 1.25f
-            val atPaint = Paint().apply {
-                color = Color.argb(100, 255, 255, 255)
-                textSize = atSize
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.LEFT
-            }
-            val namePaint = Paint().apply {
-                color = Color.argb(100, 255, 255, 255)
-                textSize = nameSize
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.LEFT
-            }
-            val y = srcH - pad
-            canvas.drawText("@", pad, y, atPaint)
-            canvas.drawText(info.ownerName, pad + atPaint.measureText("@"), y, namePaint)
-        }
-    }
-
-    private fun drawBadgeMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: Int, spec: WatermarkMath.LayoutSpec, info: WatermarkInfo, colorScheme: SmartColorExtractor.ColorScheme, context: Context) {
-        canvas.drawBitmap(source, 0f, 0f, null)
-
-        val deviceName = info.deviceName
-            .replace("motorola ", "", ignoreCase = true)
-            .replace("Motorola ", "", ignoreCase = true)
-            .trim()
-        if (deviceName.isBlank()) return
-
-        val sizeRef = minOf(srcW, srcH)
-        val badgeH = sizeRef * 0.055f
-        val logo = getMotorolaLogo(context)
-        var logoW = 0f
-        if (logo != null && !logo.isRecycled) {
-            logoW = (logo.width.toFloat() / logo.height) * badgeH * 0.60f
-        }
-
-        val namePaint = Paint().apply {
-            color = Color.WHITE
-            textSize = badgeH * 0.38f
-            typeface = Typeface.create(getMontserratTypeface(context), Typeface.BOLD)
-            textAlign = Paint.Align.LEFT
-            isFakeBoldText = true
-        }
-        val nameW = namePaint.measureText(deviceName)
-        val padH = badgeH * 0.28f
-        val gap = badgeH * 0.15f
-        val badgeW = (if (logoW > 0) logoW + gap else 0f) + nameW + padH * 2f
-
-        // Accent color from scheme, blend if too light
-        val accent = colorScheme.accent
-        val lum = SmartColorExtractor.luminance(accent)
-        val finalBg = if (lum > 0.50f) {
-            blendWithAccentMode2(accent, Color.BLACK, 0.35f)
-        } else {
-            Color.argb(200, Color.red(accent), Color.green(accent), Color.blue(accent))
-        }
-
-        val margin = sizeRef * 0.04f
-        val badgeLeft = srcW - badgeW - margin
-        val badgeTop = srcH - badgeH - margin
-
-        val bgPaint = Paint().apply {
-            color = finalBg
-            isAntiAlias = true
-        }
-        canvas.drawRoundRect(
-            RectF(badgeLeft, badgeTop, badgeLeft + badgeW, badgeTop + badgeH),
-            badgeH / 2f, badgeH / 2f, bgPaint
-        )
-
-        // Drop shadow
-        val shadowPaint = Paint().apply {
-            color = Color.argb(60, 0, 0, 0)
-            isAntiAlias = true
-        }
-        canvas.drawRoundRect(
-            RectF(badgeLeft + 1f, badgeTop + 2f, badgeLeft + badgeW + 1f, badgeTop + badgeH + 2f),
-            badgeH / 2f, badgeH / 2f, shadowPaint
-        )
-        canvas.drawRoundRect(
-            RectF(badgeLeft, badgeTop, badgeLeft + badgeW, badgeTop + badgeH),
-            badgeH / 2f, badgeH / 2f, bgPaint
-        )
-
-        val badgeCenterY = badgeTop + badgeH / 2f
-
-        var cx = badgeLeft + padH
-        // Logo
-        if (logo != null && !logo.isRecycled) {
-            val logoH = badgeH * 0.60f
-            val lw = (logo.width.toFloat() / logo.height) * logoH
-            val ly = badgeCenterY - logoH / 2f
-            val tinted = tintBitmap(logo, Color.argb(230, 255, 255, 255))
-            canvas.drawBitmap(tinted, null, RectF(cx, ly, cx + lw, ly + logoH), null)
-            tinted.recycle()
-            cx += lw + gap
-        }
-
-        // Name
-        val nameBaseline = badgeCenterY + namePaint.textSize * 0.38f
-        canvas.drawText(deviceName, cx, nameBaseline, namePaint)
-
-        // Owner name bottom-left of image
-        if (info.ownerName.isNotBlank()) {
-            val nameSize = badgeH * 0.24f
-            val atSize = nameSize * 1.25f
-            val atPaint = Paint().apply {
-                color = Color.argb(100, 255, 255, 255)
-                textSize = atSize
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.LEFT
-            }
-            val namePaint = Paint().apply {
-                color = Color.argb(100, 255, 255, 255)
-                textSize = nameSize
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.LEFT
-            }
-            val y = srcH - badgeH - margin - badgeH * 0.6f
-            canvas.drawText("@", margin, y, atPaint)
-            canvas.drawText(info.ownerName, margin + atPaint.measureText("@"), y, namePaint)
-        }
-    }
 
     // ==================== Mode 9: Cinematic Frame ====================
     // 高级电影感画框水印，仿 Leica/Hasselblad 风格
     // 白细线画框 + 左下角品牌+型号 + 右下角参数
-
-    private fun drawCinematicFrameMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: Int, spec: WatermarkMath.LayoutSpec, info: WatermarkInfo, colorScheme: SmartColorExtractor.ColorScheme, context: Context) {
-        canvas.drawBitmap(source, 0f, 0f, null)
-
-        val isPortrait = srcH > srcW
-        val refSize = minOf(srcW, srcH)
-
-        // 白细线画框，距边缘一段优雅距离
-        val frameMargin = refSize * 0.025f
-        val framePaint = Paint().apply {
-            color = Color.argb(220, 255, 255, 255)
-            strokeWidth = refSize * 0.0022f
-            style = Paint.Style.STROKE
-            isAntiAlias = true
-        }
-        canvas.drawRect(
-            frameMargin, frameMargin,
-            srcW - frameMargin, srcH - frameMargin,
-            framePaint
-        )
-
-        // 内层更细的线（形成双线框）
-        val innerMargin = frameMargin + refSize * 0.012f
-        val innerFramePaint = Paint().apply {
-            color = Color.argb(120, 255, 255, 255)
-            strokeWidth = refSize * 0.001f
-            style = Paint.Style.STROKE
-            isAntiAlias = true
-        }
-        canvas.drawRect(
-            innerMargin, innerMargin,
-            srcW - innerMargin, srcH - innerMargin,
-            innerFramePaint
-        )
-
-        // 右下角——纯白文字：机型 + 参数，左对齐
-        val textColor = Color.argb(230, 255, 255, 255)
-        val mutedColor = Color.argb(170, 255, 255, 255)
-        val nameSize = refSize * 0.022f
-        val paramSize = refSize * 0.017f
-        val bottomPad = refSize * 0.04f
-        val marginX = srcW - refSize * 0.04f
-        val baselineY = srcH - bottomPad
-
-        val deviceName = info.deviceName
-            .replace("motorola ", "", ignoreCase = true)
-            .replace("Motorola ", "", ignoreCase = true)
-            .trim()
-
-        // 机型名（加粗）右下
-        val namePaint = Paint().apply {
-            color = textColor
-            textSize = nameSize
-            typeface = Typeface.create(getMontserratTypeface(context), Typeface.BOLD)
-            textAlign = Paint.Align.RIGHT
-            isFakeBoldText = true
-            setShadowLayer(nameSize * 0.15f, 0f, nameSize * 0.08f, Color.argb(100, 0, 0, 0))
-        }
-        canvas.drawText(deviceName, marginX, baselineY, namePaint)
-
-        // 参数行（在机型上方）
-        if (info.showParams) {
-            val paramPaint = Paint().apply {
-                color = mutedColor
-                textSize = paramSize
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.RIGHT
-                setShadowLayer(paramSize * 0.15f, 0f, paramSize * 0.08f, Color.argb(100, 0, 0, 0))
-            }
-            canvas.drawText(buildParamString(info), marginX, baselineY - nameSize * 1.25f, paramPaint)
-        }
-
-        // 日期（参数上方，极小字）
-        if (info.showDate) {
-            val dateStr = info.date.replaceFirst(Regex("\\s+\\d{1,2}:\\d{2}(:\\d{2})?\\s*[apAP][mM]"), "")
-            val datePaint = Paint().apply {
-                color = Color.argb(120, 255, 255, 255)
-                textSize = paramSize * 0.7f
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.RIGHT
-                setShadowLayer(paramSize * 0.12f, 0f, paramSize * 0.06f, Color.argb(100, 0, 0, 0))
-            }
-            val dateBaseY = if (info.showParams) baselineY - nameSize * 1.25f - paramSize * 1.3f
-                             else baselineY - nameSize * 1.25f
-            canvas.drawText(dateStr, marginX, dateBaseY, datePaint)
-        }
-
-        // 左下角——小写 motorola logo + 文字
-        val logo = getMotorolaLogo(context)
-        if (logo != null && !logo.isRecycled) {
-            val logoH = nameSize * 0.95f
-            val logoW = (logo.width.toFloat() / logo.height) * logoH
-            val logoX = refSize * 0.04f
-            val logoY = baselineY - nameSize * 0.95f
-            val tinted = tintBitmap(logo, Color.argb(180, 255, 255, 255))
-            canvas.drawBitmap(tinted, null, RectF(logoX, logoY, logoX + logoW, logoY + logoH), null)
-            tinted.recycle()
-        }
-
-        // Owner name top-left inside frame
-        if (info.ownerName.isNotBlank()) {
-            val nameSize = refSize * 0.015f
-            val atSize = nameSize * 1.25f
-            val atPaint = Paint().apply {
-                color = Color.argb(140, 255, 255, 255)
-                textSize = atSize
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.LEFT
-            }
-            val namePaint = Paint().apply {
-                color = Color.argb(140, 255, 255, 255)
-                textSize = nameSize
-                typeface = getMontserratTypeface(context)
-                textAlign = Paint.Align.LEFT
-            }
-            val x = frameMargin + refSize * 0.006f
-            val y = frameMargin + refSize * 0.026f
-            canvas.drawText("@", x, y, atPaint)
-            canvas.drawText(info.ownerName, x + atPaint.measureText("@"), y, namePaint)
-        }
-    }
 
     // ==================== Mode 10: Camera Info Bar ====================
     // 底部全宽半透明信息条，仿专业相机直出信息带
@@ -1602,7 +756,7 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             }
             val y = barTop - barH * 0.15f
             canvas.drawText("@", padX, y, atPaint)
-            canvas.drawText(info.ownerName, padX + atPaint.measureText("@"), y, namePaint)
+            canvas.drawText(info.ownerName, padX + atPaint.measureText("@"), y + nameBaselineOffset(atPaint, namePaint, info.ownerName), namePaint)
         }
     }
 
@@ -1637,15 +791,10 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         }
 
         val extend = info.style == 1 || info.style == 4 || info.style == 11
+        // v1.1.5: 只保留 5 种模式 Standard(1)/Corner(3)/Classic(4)/Transp.(10)/F1(11)
         when (info.style) {
-            2 -> drawBlurFrameMode(canvas, source, w, outputH, spec, info, colorScheme, context)
             3 -> drawDiagonalMode(canvas, source, w, outputH, spec, info, colorScheme, context)
             4 -> drawBarMode(canvas, source, w, outputH, spec, info, colorScheme, context, extend)
-            5 -> drawFilmFrameMode(canvas, source, w, outputH, spec, info, colorScheme, context)
-            6 -> drawMinimalistLabelMode(canvas, source, w, outputH, spec, info, colorScheme, context)
-            7 -> drawSignatureStripMode(canvas, source, w, outputH, spec, info, colorScheme, context)
-            8 -> drawBadgeMode(canvas, source, w, outputH, spec, info, colorScheme, context)
-            9 -> drawCinematicFrameMode(canvas, source, w, outputH, spec, info, colorScheme, context)
             10 -> drawTransparencyCenterMode(canvas, source, w, outputH, spec, info, colorScheme, context)
             else -> drawBarMode(canvas, source, w, outputH, spec, info, colorScheme, context, extend)
         }

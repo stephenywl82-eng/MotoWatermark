@@ -15,7 +15,6 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import com.google.android.material.color.DynamicColors
 import androidx.appcompat.app.AppCompatActivity
 import com.watermark.photo.R
 import com.watermark.photo.core.WatermarkEngine
@@ -32,6 +31,9 @@ import androidx.core.widget.doAfterTextChanged
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 class MainActivity : AppCompatActivity() {
 
@@ -97,12 +99,20 @@ class MainActivity : AppCompatActivity() {
         return scaled
     }
 
+    /** v1.1.5: 全屏沉浸，隐藏状态栏与导航栏，可滑动临时唤出 */
+    private fun enableImmersiveMode() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            hide(WindowInsetsCompat.Type.systemBars())
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Apply dynamic colors (Material You) before super.onCreate
-        DynamicColors.applyToActivityIfAvailable(this)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        enableImmersiveMode()
 
         prefs = getSharedPreferences("moto_wm_prefs", MODE_PRIVATE)
         showParams = prefs.getBoolean("show_params", true)
@@ -120,18 +130,17 @@ class MainActivity : AppCompatActivity() {
         // 鎭㈠鎺т欢鐘舵€?        binding.switchParams.isChecked = showParams
         binding.switchDate.isChecked = showDate
         binding.switchLogo.isChecked = showLogo
+        // v1.1.5: 非留存模式(2/5/6/7/8/9)一律迁移到 Standard(1)
+        if (currentStyle != 1 && currentStyle != 3 && currentStyle != 4 && currentStyle != 10 && currentStyle != 11) {
+            currentStyle = 1
+            prefs.edit().putInt("style", currentStyle).apply()
+        }
         when (currentStyle) {
-            1 -> binding.chipStyle1.isChecked = true
-            2 -> binding.chipStyle2.isChecked = true
             3 -> binding.chipStyle3.isChecked = true
             4 -> binding.chipStyle4.isChecked = true
-            5 -> binding.chipStyle5.isChecked = true
-            6 -> binding.chipStyle6.isChecked = true
-            7 -> binding.chipStyle7.isChecked = true
-            8 -> binding.chipStyle8.isChecked = true
-            9 -> binding.chipStyle9.isChecked = true
             10 -> binding.chipStyle10.isChecked = true
             11 -> binding.chipStyle11.isChecked = true
+            else -> binding.chipStyle1.isChecked = true
         }
         binding.colorChipGroup.visibility = View.VISIBLE
         // 馃敶 鍔ㄦ€佹彃鍏?鍙栬壊" chip
@@ -229,14 +238,8 @@ class MainActivity : AppCompatActivity() {
         binding.styleChipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
             currentStyle = when {
                 checkedIds.contains(R.id.chipStyle1) -> 1
-                checkedIds.contains(R.id.chipStyle2) -> 2
                 checkedIds.contains(R.id.chipStyle3) -> 3
                 checkedIds.contains(R.id.chipStyle4) -> 4
-                checkedIds.contains(R.id.chipStyle5) -> 5
-                checkedIds.contains(R.id.chipStyle6) -> 6
-                checkedIds.contains(R.id.chipStyle7) -> 7
-                checkedIds.contains(R.id.chipStyle8) -> 8
-                checkedIds.contains(R.id.chipStyle9) -> 9
                 checkedIds.contains(R.id.chipStyle10) -> 10
                 checkedIds.contains(R.id.chipStyle11) -> 11
                 else -> 1
@@ -648,189 +651,7 @@ class MainActivity : AppCompatActivity() {
         val previewBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Bitmap.Config.ARGB_8888)
         val canvas = android.graphics.Canvas(previewBitmap)
 
-        if (currentStyle == 5) {
-            // Film frame preview
-            canvas.drawColor(android.graphics.Color.parseColor("#1a1a1a"))
-            // Main image area
-            val imgPaint = android.graphics.Paint().apply {
-                color = android.graphics.Color.parseColor("#444444")
-            }
-            canvas.drawRect(android.graphics.RectF(4f, 8f, 316f, 108f), imgPaint)
-            // Top film strip
-            val topPaint = android.graphics.Paint().apply {
-                val shader = android.graphics.LinearGradient(
-                    0f, 0f, 0f, 12f,
-                    intArrayOf(android.graphics.Color.argb(190, 0, 0, 0), android.graphics.Color.argb(0, 0, 0, 0)),
-                    null, android.graphics.Shader.TileMode.CLAMP
-                )
-                this.shader = shader
-            }
-            canvas.drawRect(0f, 0f, 320f, 12f, topPaint)
-            // Bottom film strip
-            val bottomPaint = android.graphics.Paint().apply {
-                val shader = android.graphics.LinearGradient(
-                    0f, 106f, 0f, 120f,
-                    intArrayOf(android.graphics.Color.argb(0, 0, 0, 0), android.graphics.Color.argb(220, 0, 0, 0)),
-                    null, android.graphics.Shader.TileMode.CLAMP
-                )
-                this.shader = shader
-            }
-            canvas.drawRect(0f, 106f, 320f, 120f, bottomPaint)
-            // Sprocket holes
-            val holePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.argb(50, 255, 255, 255)
-            }
-            for (y in floatArrayOf(10f, 18f, 26f, 34f, 42f, 50f, 58f, 66f, 74f, 82f, 90f, 98f, 106f, 112f)) {
-                canvas.drawCircle(6f, y, 2f, holePaint)
-                canvas.drawCircle(314f, y, 2f, holePaint)
-            }
-            // Text
-            val textPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.WHITE
-                textSize = 11f
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-                textAlign = android.graphics.Paint.Align.CENTER
-            }
-            canvas.drawText("Edge 50 Ultra", 160f, 113f, textPaint)
-            // Stamp
-            textPaint.textSize = 7f
-            textPaint.alpha = 80
-            textPaint.typeface = android.graphics.Typeface.MONOSPACE
-            textPaint.textAlign = android.graphics.Paint.Align.LEFT
-            canvas.drawText("\u25C6 FILM", 10f, 117f, textPaint)
-        } else if (currentStyle == 6) {
-            // Minimalist label preview
-            canvas.drawColor(android.graphics.Color.parseColor("#2a2a2a"))
-            val imgPaint = android.graphics.Paint().apply {
-                color = android.graphics.Color.parseColor("#555555")
-            }
-            canvas.drawRect(0f, 0f, 320f, 120f, imgPaint)
-            // Label chip
-            val chipBg = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.argb(200, 90, 120, 180)
-            }
-            canvas.drawRoundRect(android.graphics.RectF(210f, 8f, 312f, 50f), 10f, 10f, chipBg)
-            // Tail
-            val tail = android.graphics.Path().apply {
-                moveTo(302f, 50f)
-                lineTo(296f, 60f)
-                lineTo(290f, 50f)
-                close()
-            }
-            canvas.drawPath(tail, chipBg)
-            // Text
-            val labelPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.WHITE
-                textSize = 11f
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-                textAlign = android.graphics.Paint.Align.LEFT
-            }
-            canvas.drawText("Edge 50 Ultra", 218f, 24f, labelPaint)
-            val subPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.argb(200, 255, 255, 255)
-                textSize = 8f
-                typeface = android.graphics.Typeface.DEFAULT
-                textAlign = android.graphics.Paint.Align.LEFT
-            }
-            if (showParams) canvas.drawText("35mm f/1.8 ISO400", 218f, 37f, subPaint)
-            if (showDate) canvas.drawText("2026:06:13", 218f, 47f, subPaint)
-        } else if (currentStyle == 7) {
-            // Signature Strip preview
-            canvas.drawColor(android.graphics.Color.parseColor("#2a3035"))
-            // Top strip
-            val stripPaint = android.graphics.Paint().apply {
-                color = android.graphics.Color.argb(180, 30, 30, 35)
-            }
-            canvas.drawRect(0f, 0f, 320f, 22f, stripPaint)
-            // Motorola M logo (circle approximation)
-            val logoPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.argb(220, 255, 255, 255)
-            }
-            canvas.drawCircle(18f, 11f, 7f, logoPaint)
-            canvas.drawCircle(17f, 10f, 4f, android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.parseColor("#2a3035")
-            })
-            // Device name
-            val nameP = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.argb(220, 255, 255, 255)
-                textSize = 10f
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-                textAlign = android.graphics.Paint.Align.LEFT
-            }
-            canvas.drawText("ThinkPhone 25", 30f, 15f, nameP)
-            // Params right
-            if (showParams) {
-                val paramP = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                    color = android.graphics.Color.argb(150, 255, 255, 255)
-                    textSize = 8f
-                    typeface = android.graphics.Typeface.DEFAULT
-                    textAlign = android.graphics.Paint.Align.RIGHT
-                }
-                canvas.drawText("24mm f/1.6 ISO320", 314f, 15f, paramP)
-            }
-        } else if (currentStyle == 8) {
-            // Badge preview
-            canvas.drawColor(android.graphics.Color.parseColor("#3a4048"))
-            val centerX = 160f
-            val centerY = 60f
-            val bgW = 140f
-            val bgH = 22f
-            // Shadow
-            val shadowP = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.argb(40, 0, 0, 0)
-            }
-            canvas.drawRoundRect(centerX - bgW/2f, centerY - bgH/2f + 1f, centerX + bgW/2f, centerY + bgH/2f + 1f, 11f, 11f, shadowP)
-            // Badge bg
-            val bgP = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                if (originalColor) color = android.graphics.Color.argb(200, 160, 80, 50)
-                else if (barbiePink) color = android.graphics.Color.argb(200, 200, 80, 120)
-                else color = android.graphics.Color.argb(200, 70, 110, 170)
-            }
-            canvas.drawRoundRect(centerX - bgW/2f, centerY - bgH/2f, centerX + bgW/2f, centerY + bgH/2f, 11f, 11f, bgP)
-            // M logo
-            val mlp = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.argb(220, 255, 255, 255)
-            }
-            canvas.drawCircle(centerX - bgW/2f + 16f, centerY, 6f, mlp)
-            canvas.drawCircle(centerX - bgW/2f + 15f, centerY - 1f, 3.5f, android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.argb(200, 70, 110, 170)
-            })
-            // Text
-            val tn = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.argb(220, 255, 255, 255)
-                textSize = 9f
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-                textAlign = android.graphics.Paint.Align.LEFT
-            }
-            canvas.drawText("ThinkPhone 25", centerX - bgW/2f + 28f, centerY + 4f, tn)
-        } else if (currentStyle == 9) {
-            // Cinematic Frame preview
-            canvas.drawColor(android.graphics.Color.parseColor("#1a1c20"))
-            val fi = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.argb(60, 255, 255, 255)
-                style = android.graphics.Paint.Style.STROKE
-                strokeWidth = 1f
-            }
-            canvas.drawRect(8f, 4f, 312f, 116f, fi)
-            canvas.drawRect(12f, 8f, 308f, 112f, fi)
-            val cfi = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.argb(100, 255, 255, 255)
-                textSize = 9f
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-                textAlign = android.graphics.Paint.Align.RIGHT
-            }
-            canvas.drawText("ThinkPhone 25", 306f, 112f, cfi)
-            cfi.textSize = 7f
-            cfi.alpha = 60
-            canvas.drawText("MMX", 306f, 106f, cfi)
-            // Bottom left logo placeholder
-            val cfi2 = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.argb(60, 255, 255, 255)
-                textSize = 6f
-                textAlign = android.graphics.Paint.Align.LEFT
-            }
-            canvas.drawText("motorola", 16f, 112f, cfi2)
-        } else if (currentStyle == 10) {
+        if (currentStyle == 10) {
             // Camera Info Bar preview — bottom full-width bar
             canvas.drawColor(android.graphics.Color.parseColor("#2a3038"))
             val barT = 88f
@@ -895,32 +716,6 @@ class MainActivity : AppCompatActivity() {
                 textAlign = android.graphics.Paint.Align.RIGHT
             }
             canvas.drawText("F1", 306f, barT + 20f, pr)
-        } else if (currentStyle == 2) {
-            canvas.drawColor(android.graphics.Color.parseColor("#333333"))
-            val imgRect = android.graphics.RectF(20f, 10f, 300f, 90f)
-            val shadowPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.BLACK
-                alpha = 100
-                maskFilter = android.graphics.BlurMaskFilter(15f, android.graphics.BlurMaskFilter.Blur.NORMAL)
-            }
-            canvas.drawRoundRect(android.graphics.RectF(24f, 14f, 304f, 94f), 12f, 12f, shadowPaint)
-            val imgPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.parseColor("#555555")
-            }
-            canvas.drawRoundRect(imgRect, 12f, 12f, imgPaint)
-            val barPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.argb(180, 40, 40, 40)
-            }
-            canvas.drawRoundRect(android.graphics.RectF(20f, 70f, 300f, 110f), 8f, 8f, barPaint)
-            val textPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                color = android.graphics.Color.WHITE
-                textSize = 14f
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-            }
-            canvas.drawText("Edge 50 Ultra", 30f, 95f, textPaint)
-            textPaint.textSize = 10f
-            textPaint.typeface = android.graphics.Typeface.DEFAULT
-            canvas.drawText("35mm f/1.8", 200f, 95f, textPaint)
         } else if (currentStyle == 3) {
             canvas.drawColor(android.graphics.Color.parseColor("#555555"))
             val bgPaint = android.graphics.Paint().apply { color = android.graphics.Color.parseColor("#4a6fa5") }
@@ -944,8 +739,28 @@ class MainActivity : AppCompatActivity() {
             canvas.drawText("Edge 50 Ultra", 312f, 110f, tinyText)
             if (showParams) canvas.drawText("35mm f/1.8 ISO400", 312f, 119f, tinySub)
             if (showDate) canvas.drawText("2026:05:07", 312f, 127f, tinySub)
+        } else if (currentStyle == 4) {
+            // v1.1.5 Classic: bottom bar preview
+            canvas.drawColor(android.graphics.Color.parseColor("#2a2a2a"))
+            val barPaint = android.graphics.Paint().apply { color = android.graphics.Color.argb(225, 18, 18, 18) }
+            canvas.drawRect(0f, 84f, 320f, 120f, barPaint)
+            val lp = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.WHITE
+                textSize = 11f
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+            }
+            canvas.drawText("motorola", 12f, 100f, lp)
+            lp.textSize = 12f
+            canvas.drawText("Edge 50 Ultra", 66f, 100f, lp)
+            val rp = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.argb(215, 255, 255, 255)
+                textSize = 8f
+                typeface = android.graphics.Typeface.DEFAULT
+                textAlign = android.graphics.Paint.Align.RIGHT
+            }
+            if (showParams) canvas.drawText("24mm f/1.6 1/125s ISO320", 310f, 96f, rp)
+            if (showDate) canvas.drawText("2025-06-16", 310f, 110f, rp)
         } else {
-            canvas.drawColor(android.graphics.Color.parseColor("#1a1a1a"))
             val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
                 color = android.graphics.Color.parseColor("#CC000000")
             }

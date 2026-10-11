@@ -17,8 +17,8 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center"
-            android:paddingTop="32dp"
-            android:paddingBottom="4dp">
+            android:paddingTop="24dp"
+            android:paddingBottom="2dp">
 
             <ImageView
                 android:id="@+id/ivLogo"
@@ -57,11 +57,11 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="4dp"
-            app:cardCornerRadius="16dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="2dp"
+            app:cardCornerRadius="14dp"
             app:cardElevation="2dp"
             app:cardBackgroundColor="@color/md_theme_surfaceVariant"
             android:visibility="gone">
@@ -79,9 +79,9 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="end"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="4dp"
-            android:layout_marginEnd="16dp">
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="2dp"
+            android:layout_marginEnd="12dp">
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/fabCamera"
@@ -113,8 +113,8 @@
                 android:contentDescription="Rotate"
                 android:visibility="gone"
                 app:fabSize="mini"
-                app:tint="@color/md_theme_onSecondary"
-                app:backgroundTint="@color/md_theme_secondary" />
+                app:tint="@color/md_theme_onPrimary"
+                app:backgroundTint="@color/md_theme_primary" />
 
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -126,29 +126,29 @@
                 android:contentDescription="@string/save_image"
                 android:visibility="gone"
                 app:fabSize="mini"
-                app:tint="@color/md_theme_onTertiary"
-                app:backgroundTint="@color/md_theme_tertiary" />
+                app:tint="@color/md_theme_onPrimary"
+                app:backgroundTint="@color/md_theme_primary" />
         </LinearLayout>
 
         <!-- Bottom Control Panel -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="20dp"
+            app:cardCornerRadius="18dp"
             app:cardElevation="4dp"
             app:cardBackgroundColor="@color/md_theme_surface"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginBottom="16dp">
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:layout_marginBottom="8dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingTop="16dp"
-                android:paddingBottom="20dp">
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp">
 
                 <!-- Section: Style -->
                 <TextView
@@ -158,7 +158,7 @@
                     android:textSize="11sp"
                     android:textColor="@color/md_theme_onSurfaceVariant"
                     android:letterSpacing="0.1"
-                    android:layout_marginBottom="6dp" />
+                    android:layout_marginBottom="3dp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -172,30 +172,22 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         app:singleSelection="true"
-                        app:chipSpacingHorizontal="4dp">
+                        app:chipSpacingHorizontal="3dp">
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle1"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="36dp"
+                            android:layout_height="30dp"
                             android:text="Standard"
                             android:textSize="13sp"
                             android:checked="true" />
 
                         <com.google.android.material.chip.Chip
-                            android:id="@+id/chipStyle2"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="36dp"
-                            android:text="Blur"
-                            android:textSize="13sp" />
-
-                        <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle3"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="36dp"
+                            android:layout_height="30dp"
                             android:text="Corner"
                             android:textSize="13sp" />
 
@@ -203,55 +195,15 @@
                             android:id="@+id/chipStyle4"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="36dp"
+                            android:layout_height="30dp"
                             android:text="Classic"
-                            android:textSize="13sp" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipStyle5"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="36dp"
-                            android:text="Film"
-                            android:textSize="13sp" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipStyle6"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="36dp"
-                            android:text="Label"
-                            android:textSize="13sp" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipStyle7"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="36dp"
-                            android:text="Strip"
-                            android:textSize="13sp" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipStyle8"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="36dp"
-                            android:text="Badge"
-                            android:textSize="13sp" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipStyle9"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="36dp"
-                            android:text="Cinema"
                             android:textSize="13sp" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle10"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="36dp"
+                            android:layout_height="30dp"
                             android:text="Transp."
                             android:textSize="13sp" />
 
@@ -259,7 +211,7 @@
                             android:id="@+id/chipStyle11"
                             style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
-                            android:layout_height="36dp"
+                            android:layout_height="30dp"
                             android:text="F1"
                             android:textSize="13sp" />
                     </com.google.android.material.chip.ChipGroup>
@@ -280,12 +232,13 @@
                     android:layout_height="wrap_content"
                     app:singleSelection="true"
                     app:chipSpacingHorizontal="6dp"
-                    android:layout_marginTop="10dp" />
+                    android:layout_marginTop="6dp" />
 
                 <!-- Section: Owner -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="50dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
@@ -321,8 +274,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:background="@color/md_theme_outlineVariant"
-                    android:layout_marginTop="10dp"
-                    android:layout_marginBottom="6dp" />
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="3dp" />
 
                 <!-- Section: Toggles - clean 2-column grid -->
                 <TextView
@@ -332,12 +285,12 @@
                     android:textSize="11sp"
                     android:textColor="@color/md_theme_onSurfaceVariant"
                     android:letterSpacing="0.1"
-                    android:layout_marginBottom="4dp" />
+                    android:layout_marginBottom="2dp" />
 
                 <!-- Row: Params | Date -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
+                    android:layout_height="42dp"
                     android:orientation="horizontal">
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
@@ -364,7 +317,7 @@
                 <!-- Row: Logo | PNG -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
+                    android:layout_height="42dp"
                     android:orientation="horizontal">
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
@@ -391,7 +344,7 @@
                 <!-- Row: White Text | White BG -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
+                    android:layout_height="42dp"
                     android:orientation="horizontal">
 
                     <com.google.android.material.switchmaterial.SwitchMaterial

@@ -25,6 +25,9 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.exifinterface.media.ExifInterface
 import com.watermark.photo.R
 import com.watermark.photo.core.WatermarkEngine
@@ -74,10 +77,20 @@ class CameraActivity : AppCompatActivity() {
         else Toast.makeText(this, "Camera permission required", Toast.LENGTH_LONG).show()
     }
 
+    /** v1.1.5: 相机页全屏沉浸，隐藏状态栏与导航栏 */
+    private fun enableImmersiveMode() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            hide(WindowInsetsCompat.Type.systemBars())
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityCameraBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        enableImmersiveMode()
 
         currentStyle = intent.getIntExtra("style", 10)
         binding.chipStyle.text = "Style $currentStyle"
