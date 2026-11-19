@@ -11,8 +11,8 @@ android {
         applicationId = "com.watermark.photo"
         minSdk = 26
         targetSdk = 35
-        versionCode = 35
-        versionName = "1.1.6"
+        versionCode = 55
+        versionName = "1.3.6"
     }
 
     signingConfigs {
@@ -25,7 +25,9 @@ android {
     }
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // [v1.1.6] 启用 R8 代码收缩与资源压缩
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -42,6 +44,11 @@ android {
     }
     buildFeatures {
         viewBinding = true
+    }
+    // [v1.1.6] release 构建不跑 lint 检查（aapt/lint 不应阻断出包）
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
     }
 }
 

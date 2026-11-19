@@ -1,13 +1,22 @@
 package com.watermark.photo.data
 
+import android.content.Context
+import org.json.JSONObject
+import java.io.File
+
 /**
  * 机型代号 → 市场名称映射表
  * 将 Motorola 机型代号（如 XT2401-2）转换为市场名称（如 ThinkPhone 25）
+ *
+ * v1.1.7: 数据源改为三级——内置兜底表 / assets/devices.json / 用户导入的外部 JSON。
+ * 外部导入存于 filesDir，覆盖内置；无需重新编译即可更换机型库。
  */
 object DeviceMapper {
 
-    private val deviceMap = mapOf(
+    // 内置兜底表：仅当 assets/devices.json 读取失败时使用
+    private val builtinFallback = mapOf(
         // === 2026 ===
+        "Signature 27" to "Signature 27",  // v1.1.8 Signature 27（花体水印）
         "XT2653" to "Razr 70 Ultra",
         "XT2651" to "Razr 70",
         "XT2651-4" to "Razr fold",
@@ -194,4 +203,81 @@ object DeviceMapper {
                 deviceMap.containsKey(model) ||
                 deviceMap.containsKey(model.substringBefore("-"))
     }
+
+    private const val ASSET_FILE = "devices.json"
+    private const val USER_FILE = "devices_user.json"
+
+    /** 当前生效的映射表（内置 + 外部覆盖），线程安全 */
+    @Volatile
+    private var deviceMap: Map<String, String> = builtinFallback
+
+    /** 启动时调用：加载内置 JSON，再叠加用户导入的 JSON 覆盖 */
+    fun init(context: Context) {
+        val result = builtinFallback.toMutableMap()
+        loadJsonFromAssets(context)?.let { result.putAll(it) }
+        loadJsonFromFile(userFile(context))?.let { result.putAll(it) }
+        deviceMap = result.toMap()
+    }
+
+    /** 是否已导入过外部机型库 */
+    fun hasUserOverride(context: Context): Boolean = userFile(context).exists()
+
+    /**
+     * 从 JSON 字符串导入外部机型库并立即生效。
+     * @return 成功导入的条目数；JSON 非法时抛 IllegalArgumentException
+     */
+    fun importJson(context: Context, json: String): Int {
+        val map = parseJson(json)
+        if (map.isEmpty()) throw IllegalArgumentException("empty or invalid device list")
+        saveJsonToFile(userFile(context), json.trim())
+        deviceMap = builtinFallback.toMutableMap().apply {
+            loadJsonFromAssets(context)?.let { putAll(it) }
+            putAll(map)
+        }.toMap()
+        return map.size
+    }
+
+    /** 清除外部机型库，恢复内置 */
+    fun resetToBuiltin(context: Context) {
+        userFile(context).delete()
+        deviceMap = builtinFallback.toMutableMap().apply {
+            loadJsonFromAssets(context)?.let { putAll(it) }
+        }.toMap()
+    }
+
+    private fun userFile(context: Context) = File(context.filesDir, USER_FILE)
+
+    private fun parseJson(json: String): Map<String, String> {
+        val obj = JSONObject(json)
+        val result = LinkedHashMap<String, String>()
+        val keys = obj.keys()
+        while (keys.hasNext()) {
+            val k = keys.next()
+            val v = obj.optString(k, "")
+            if (k.isNotBlank() && v.isNotBlank()) result[k.trim()] = v.trim()
+        }
+        return result
+    }
+
+    private fun loadJsonFromAssets(context: Context): Map<String, String>? = try {
+        context.assets.open(ASSET_FILE).bufferedReader().use { parseJson(it.readText()) }
+    } catch (e: Exception) {
+        null
+    }
+
+    private fun loadJsonFromFile(file: File): Map<String, String>? = try {
+        if (file.exists()) parseJson(file.readText()) else null
+    } catch (e: Exception) {
+        null
+    }
+
+    private fun saveJsonToFile(file: File, json: String) {
+        file.writeText(json)
+    }
+
+    /**
+     * 所有可选的机型市场名（去重、按名称排序），供手动选择列表使用。
+     * v1.1.7: 手动选择型号功能。
+     */
+    fun allDisplayNames(): List<String> = deviceMap.values.distinct().sorted()
 }

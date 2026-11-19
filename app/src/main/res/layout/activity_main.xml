@@ -17,7 +17,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center"
-            android:paddingTop="24dp"
+            android:paddingTop="48dp"
             android:paddingBottom="2dp">
 
             <ImageView
@@ -33,9 +33,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Moto Watermark"
-                android:textColor="@color/md_theme_onSurfaceVariant"
-                android:textSize="14sp" />
+                android:text="@string/app_name"
+                android:textColor="@color/md_theme_onSurface"
+                android:textAppearance="@style/TextAppearance.MotoWatermark.Headline" />
         </LinearLayout>
 
         <!-- Center hint (hidden when image loaded) -->
@@ -45,7 +45,7 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="Tap + to add watermark\nLong press + for batch mode"
+            android:text="@string/center_hint"
             android:textColor="@color/md_theme_onSurface"
             android:textSize="14sp"
             android:lineSpacingExtra="4dp"
@@ -61,7 +61,7 @@
             android:layout_marginEnd="6dp"
             android:layout_marginTop="4dp"
             android:layout_marginBottom="2dp"
-            app:cardCornerRadius="14dp"
+            app:cardCornerRadius="28dp"
             app:cardElevation="2dp"
             app:cardBackgroundColor="@color/md_theme_surfaceVariant"
             android:visibility="gone">
@@ -89,9 +89,9 @@
                 android:layout_height="wrap_content"
                 android:src="@android:drawable/ic_menu_camera"
                 android:contentDescription="Camera"
-                app:fabSize="mini"
-                app:tint="@color/md_theme_onPrimary"
-                app:backgroundTint="@color/md_theme_primary" />
+                app:fabSize="normal"
+                app:tint="?attr/colorOnPrimary"
+                app:backgroundTint="?attr/colorPrimary" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/fabSelect"
@@ -99,9 +99,9 @@
                 android:layout_height="wrap_content"
                 android:src="@android:drawable/ic_input_add"
                 android:contentDescription="@string/select_photo"
-                app:fabSize="mini"
-                app:tint="@color/md_theme_onPrimary"
-                app:backgroundTint="@color/md_theme_primary" />
+                app:fabSize="normal"
+                app:tint="?attr/colorOnPrimary"
+                app:backgroundTint="?attr/colorPrimary" />
 
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -112,9 +112,9 @@
                 android:src="@android:drawable/ic_menu_rotate"
                 android:contentDescription="Rotate"
                 android:visibility="gone"
-                app:fabSize="mini"
-                app:tint="@color/md_theme_onPrimary"
-                app:backgroundTint="@color/md_theme_primary" />
+                app:fabSize="normal"
+                app:tint="?attr/colorOnPrimary"
+                app:backgroundTint="?attr/colorPrimary" />
 
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -125,16 +125,16 @@
                 android:src="@android:drawable/ic_menu_save"
                 android:contentDescription="@string/save_image"
                 android:visibility="gone"
-                app:fabSize="mini"
-                app:tint="@color/md_theme_onPrimary"
-                app:backgroundTint="@color/md_theme_primary" />
+                app:fabSize="normal"
+                app:tint="?attr/colorOnPrimary"
+                app:backgroundTint="?attr/colorPrimary" />
         </LinearLayout>
 
         <!-- Bottom Control Panel -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="18dp"
+            app:cardCornerRadius="28dp"
             app:cardElevation="4dp"
             app:cardBackgroundColor="@color/md_theme_surface"
             android:layout_marginStart="6dp"
@@ -154,11 +154,10 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="STYLE"
-                    android:textSize="11sp"
+                    android:text="@string/section_style"
+                    android:textAppearance="@style/TextAppearance.MotoWatermark.Label"
                     android:textColor="@color/md_theme_onSurfaceVariant"
-                    android:letterSpacing="0.1"
-                    android:layout_marginBottom="3dp" />
+                    android:layout_marginBottom="4dp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -176,43 +175,51 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle1"
-                            style="@style/Widget.Material3.Chip.Filter"
+                            style="@style/Widget.MotoWatermark.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="30dp"
-                            android:text="Standard"
+                            android:text="@string/style_standard"
                             android:textSize="13sp"
                             android:checked="true" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle3"
-                            style="@style/Widget.Material3.Chip.Filter"
+                            style="@style/Widget.MotoWatermark.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="30dp"
-                            android:text="Corner"
+                            android:text="@string/style_corner"
                             android:textSize="13sp" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle4"
-                            style="@style/Widget.Material3.Chip.Filter"
+                            style="@style/Widget.MotoWatermark.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="30dp"
-                            android:text="Classic"
+                            android:text="@string/style_classic"
                             android:textSize="13sp" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle10"
-                            style="@style/Widget.Material3.Chip.Filter"
+                            style="@style/Widget.MotoWatermark.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="30dp"
-                            android:text="Transp."
+                            android:text="@string/style_transp"
                             android:textSize="13sp" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipStyle11"
-                            style="@style/Widget.Material3.Chip.Filter"
+                            style="@style/Widget.MotoWatermark.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="30dp"
-                            android:text="F1"
+                            android:text="@string/style_f1"
+                            android:textSize="13sp" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipStyle12"
+                            style="@style/Widget.MotoWatermark.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="30dp"
+                            android:text="@string/style_pure"
                             android:textSize="13sp" />
                     </com.google.android.material.chip.ChipGroup>
 
@@ -245,7 +252,7 @@
                     <TextView
                         android:layout_width="56dp"
                         android:layout_height="wrap_content"
-                        android:text="Owner"
+                        android:text="@string/owner"
                         android:textSize="13sp"
                         android:textColor="@color/md_theme_onSurface" />
 
@@ -255,18 +262,49 @@
                         android:layout_weight="1"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
                         app:hintTextColor="@color/md_theme_onSurfaceVariant"
-                        app:boxStrokeColor="@color/md_theme_outline">
+                        app:boxStrokeColor="@color/md_theme_outline"
+                        app:boxCornerRadiusTopStart="28dp"
+                        app:boxCornerRadiusTopEnd="28dp"
+                        app:boxCornerRadiusBottomStart="28dp"
+                        app:boxCornerRadiusBottomEnd="28dp">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etOwnerName"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="@stephen"
+                            android:hint="@string/hint_owner"
                             android:maxLines="1"
                             android:textSize="14sp"
                             android:inputType="textPersonName|textNoSuggestions"
                             android:textColor="@color/md_theme_onSurface" />
                     </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <!-- Section: Device model (v1.1.7 manual select) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="50dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="56dp"
+                        android:layout_height="wrap_content"
+                        android:text="@string/device_model_label"
+                        android:textSize="13sp"
+                        android:textColor="@color/md_theme_onSurface" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDeviceModel"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:text="@string/device_auto"
+                        android:textAllCaps="false"
+                        android:textSize="14sp"
+                        app:cornerRadius="28dp" />
                 </LinearLayout>
 
                 <!-- Divider -->
@@ -281,11 +319,10 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="TOGGLES"
-                    android:textSize="11sp"
+                    android:text="@string/section_toggles"
+                    android:textAppearance="@style/TextAppearance.MotoWatermark.Label"
                     android:textColor="@color/md_theme_onSurfaceVariant"
-                    android:letterSpacing="0.1"
-                    android:layout_marginBottom="2dp" />
+                    android:layout_marginBottom="4dp" />
 
                 <!-- Row: Params | Date -->
                 <LinearLayout
@@ -298,7 +335,7 @@
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:text="Params"
+                        android:text="@string/toggle_params"
                         android:textSize="13sp"
                         android:textColor="@color/md_theme_onSurface"
                         android:checked="true" />
@@ -308,7 +345,7 @@
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:text="Date"
+                        android:text="@string/toggle_date"
                         android:textSize="13sp"
                         android:textColor="@color/md_theme_onSurface"
                         android:checked="true" />
@@ -325,7 +362,7 @@
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:text="Logo"
+                        android:text="@string/toggle_logo"
                         android:textSize="13sp"
                         android:textColor="@color/md_theme_onSurface"
                         android:checked="true" />
@@ -335,7 +372,7 @@
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:text="PNG"
+                        android:text="@string/toggle_png"
                         android:textSize="13sp"
                         android:textColor="@color/md_theme_onSurface"
                         android:checked="true" />
@@ -352,7 +389,7 @@
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:text="White Text"
+                        android:text="@string/toggle_white_text"
                         android:textSize="13sp"
                         android:textColor="@color/md_theme_onSurface"
                         android:checked="false" />
@@ -362,7 +399,7 @@
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:text="White BG"
+                        android:text="@string/toggle_white_bg"
                         android:textSize="13sp"
                         android:textColor="@color/md_theme_onSurface"
                         android:checked="false" />
@@ -388,5 +425,24 @@
         android:textSize="16sp"
         android:textStyle="bold"
         android:visibility="gone" />
+
+    <!-- v1.3.4: 设置入口（右上角，覆盖在整个界面上） -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSettings"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="12dp"
+        android:contentDescription="@string/settings_title"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        app:cornerRadius="24dp"
+        app:icon="@drawable/ic_settings_24"
+        app:iconGravity="textStart"
+        app:iconPadding="0dp"
+        app:iconSize="24dp"
+        app:iconTint="@color/md_theme_onSurface"
+        style="@style/Widget.Material3.Button.TonalButton" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

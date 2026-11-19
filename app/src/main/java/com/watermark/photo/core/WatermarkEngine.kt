@@ -32,6 +32,40 @@ object WatermarkEngine {
     }
 
     /**
+     * v1.1.8: Signature 机型——机型名位置改用花体 logo 绘制，替代普通文字。
+     * @param centerY 花体垂直中心
+     * @param targetH 花体绘制高度（由调用方按底栏高度决定，保证够大且不溢出）
+     * @return 是否命中并绘制了花体（true=已绘制，调用方应跳过原文字）
+     */
+    private fun drawSignatureIfNeeded(
+        canvas: Canvas, deviceName: String, context: Context,
+        anchorX: Float, centerY: Float, targetH: Float,
+        color: Int, align: Paint.Align
+    ): Boolean {
+        if (!deviceName.contains("signature", ignoreCase = true)) return false
+        val sig = try {
+            BitmapFactory.decodeResource(context.resources, R.drawable.signature_script)
+        } catch (e: Exception) { null } ?: return false
+
+        val ratio = sig.width.toFloat() / sig.height
+        val targetW = targetH * ratio
+        val left = when (align) {
+            Paint.Align.RIGHT -> anchorX - targetW
+            Paint.Align.CENTER -> anchorX - targetW / 2f
+            else -> anchorX
+        }
+        // v1.2.9: 花体按"视觉主体带中心"对齐，而非图片几何中心。
+        // signature_script.png 因字母 g 下垂，图片几何中心 y=162.5 比笔画主体带中心 y=149 低 13.5px(4.15%)；
+        // 只有用主体带中心对齐，signature 才与左侧 motorola 字标处于同一水平线（对齐官方参考图）。
+        val top = centerY - (149f / 325f) * targetH
+        val tinted = tintBitmap(sig, color)
+        canvas.drawBitmap(tinted, null, RectF(left, top, left + targetW, top + targetH), null)
+        tinted.recycle()
+        sig.recycle()
+        return true
+    }
+
+    /**
      * 深色文字模式下翻转 FIFA logo：白色区域→黑，黑色文字→白，金色保留原色
      */
     private fun invertRightLogoForDark(logo: Bitmap): Bitmap {
@@ -64,6 +98,24 @@ object WatermarkEngine {
         return out
     }
 
+    /** v1.2.4: 反色双色 logo（黑圆白M ↔ 白圆黑M），保留 alpha 与明暗层次。
+     *  invert=true 时黑→白、白→黑；false 返回原图副本。*/
+    private fun invertLogoColors(source: Bitmap): Bitmap {
+        val out = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
+        val px = IntArray(source.width * source.height)
+        source.getPixels(px, 0, source.width, 0, 0, source.width, source.height)
+        for (i in px.indices) {
+            val a = Color.alpha(px[i])
+            if (a == 0) continue
+            val r = 255 - Color.red(px[i])
+            val g = 255 - Color.green(px[i])
+            val b = 255 - Color.blue(px[i])
+            px[i] = Color.argb(a, r, g, b)
+        }
+        out.setPixels(px, 0, source.width, 0, 0, source.width, source.height)
+        return out
+    }
+
     private fun getMontserratTypeface(context: Context): Typeface {
         if (montserratTypeface == null) {
             synchronized(this) {
@@ -84,6 +136,16 @@ object WatermarkEngine {
         namePaint.getTextBounds(name, 0, name.length, rb)
         val nmCenter = (rb.top + rb.bottom) / 2f
         return atCenter - nmCenter
+    }
+
+    /** v1.3.2: 计算让文字"实际墨迹中心"精确落在 centerY 的 baseline。
+     *  用 getTextBounds 的真实墨迹框（含降部/大小写），比 fontMetrics 几何中心更贴合视觉。
+     *  用于普通机型文字与图片字标/圆形 logo 的水平对齐。 */
+    private fun baselineForVisualCenter(paint: Paint, text: String, centerY: Float): Float {
+        if (text.isEmpty()) return centerY
+        val rb = Rect()
+        paint.getTextBounds(text, 0, text.length, rb)
+        return centerY - (rb.top + rb.bottom) / 2f
     }
 
     private fun buildParamString(info: WatermarkInfo): String {
@@ -201,7 +263,12 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         namePaint.typeface = Typeface.create(getMontserratTypeface(context), Typeface.BOLD)
         namePaint.textAlign = Paint.Align.RIGHT
         namePaint.setShadowLayer(textSize * 0.15f, 0f, textSize * 0.08f, Color.argb(120, 0, 0, 0))
-        canvas.drawText(deviceName, rightX, bottomY, namePaint)
+        // v1.1.8: Signature 机型用花体替代机型名文字（放大）
+        // v1.2.1: 花体放大 1.63×（textSize 2.6→4.24），对齐官方 signature 视觉大小
+        val sigH3 = textSize * 4.24f
+        if (!drawSignatureIfNeeded(canvas, deviceName, context, rightX, bottomY - sigH3 / 2f, sigH3, textColor, Paint.Align.RIGHT)) {
+            canvas.drawText(deviceName, rightX, bottomY, namePaint)
+        }
 
         // params line (with shadow)
         if (info.showParams) {
@@ -291,7 +358,8 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         val desiredLogoH = barH * 0.257f
         val logoRatio = logo?.let { it.width.toFloat() / it.height } ?: (118f / 31f)
         val logoW = logoRatio * desiredLogoH
-        val maxLogoW = barH * 1.05f
+        // v1.2.2: motorola 字标缩小到 0.876×（maxLogoW 1.05→0.92），对齐官方纤细字标
+        val maxLogoW = barH * 0.92f
         val (actualLogoW, actualLogoH) = if (logoW > maxLogoW) {
             maxLogoW to (maxLogoW / logoRatio)
         } else {
@@ -318,15 +386,25 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         if (suffix.isNotEmpty()) {
             val suffixPaint = Paint().apply {
                 color = textColor
-                textSize = 0.2406f * barH
+                // v1.3.3: 缩小机型文字字号匹配固定的 motorola 字标（0.2406→0.20，约0.83×）
+                // 水平对齐仍由 baselineForVisualCenter 按墨迹中心计算，改字号后自动保持
+                textSize = 0.20f * barH
                 this.typeface = typeface
                 textAlign = Paint.Align.LEFT
                 isFakeBoldText = false
             }
-            val suffixCenterY = logoTop + actualLogoH / 2f
-            val suffixBaseline = suffixCenterY + suffixPaint.textSize * 0.38f
+            // v1.3.6 [B方案]: 严格基线对齐——对齐到 motorola 字标的"墨迹中心"而非图片几何中心。
+            // motorola_logo.png 字母偏下（升部少、主体带多），墨迹中心在图片高度 58% 处（真机实测主体带中心=图高×0.58）；
+            // 旧代码用几何中心(0.5)导致机型文字/花体整体比字标高约4.5px。改为 0.58 后三者严格同一水平线。
+            val suffixCenterY = logoTop + actualLogoH * 0.58f
             val suffixX = if (info.showLogo) logoStartX + actualLogoW + barH * 0.0693f else logoStartX
-            canvas.drawText(suffix.lowercase(), suffixX, suffixBaseline, suffixPaint)
+            // v1.2.6: Signature 花体左移贴近 motorola 字标（图片左侧有透明留白），并缩到与官方等宽
+            // 花体图片自带约14px左留白，官方花体紧挨字标，故额外左移 barH*0.06；大小 3.42→3.22
+            if (!drawSignatureIfNeeded(canvas, suffix, context, suffixX - barH * 0.06f, suffixCenterY, actualLogoH * 3.22f, textColor, Paint.Align.LEFT)) {
+                // v1.3.2: 普通机型文字按实际墨迹中心对齐字标中心线（不再用写死 0.38×字号）
+                val text = suffix.lowercase()
+                canvas.drawText(text, suffixX, baselineForVisualCenter(suffixPaint, text, suffixCenterY), suffixPaint)
+            }
         }
 
         // Owner name below logo (same position regardless of logo visibility)
@@ -400,8 +478,9 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         if (info.showDate) {
             val datePaint = Paint()
             datePaint.color = fadeColor(textColor, 0.17f)
-            datePaint.textSize = 0.17765f * barH
-            datePaint.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+            // v1.2.3: 日期与参数行统一粗细/字号（NORMAL→BOLD, 0.17765→0.168）
+            datePaint.textSize = (if (isPortrait) 0.168f else 0.21f) * barH
+            datePaint.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             datePaint.letterSpacing = 0.015f
             datePaint.textAlign = Paint.Align.RIGHT
             val dateTextSize = datePaint.textSize
@@ -433,8 +512,9 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
         val measureDatePaint = Paint().apply {
-            textSize = 0.17765f * barH
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+            // v1.2.3: 与实际日期文字一致，保证竖线定位准确
+            textSize = 0.1764f * barH
+            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
 
         if (!info.showDate && info.showParams) {
@@ -451,7 +531,7 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             canvas.drawText(paramText, rightX, paramCenterY, paramPaint)
 
             val textLeftX = rightX - measurePaint.measureText(paramText)
-            val lineX = textLeftX - barH * 0.2415f
+            val lineX = textLeftX - barH * 0.205f
             drawMode4VerticalLine(canvas, lineX, barH, barTop, textColor)
             drawMode4Logo(canvas, lineX, barH, barTop, textColor, context, info)
             return
@@ -461,8 +541,9 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         if (info.showDate && !info.showParams) {
             val datePaint = Paint().apply {
                 color = fadeColor(textColor, 0.2f)
-                textSize = 0.17765f * barH
-                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+                // v1.2.3: 日期与参数行统一粗细/字号（NORMAL→BOLD, 0.17765→0.1764）
+                textSize = 0.1764f * barH
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
                 letterSpacing = 0.015f
                 textAlign = Paint.Align.RIGHT
             }
@@ -470,7 +551,7 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             val dateCenterY = barTop + barH / 2f + 0.38f * dateTextSize
             canvas.drawText(dateNoTime, rightX, dateCenterY, datePaint)
 
-            val lineX = rightX - measureDatePaint.measureText(dateNoTime) - barH * 0.2415f
+            val lineX = rightX - measureDatePaint.measureText(dateNoTime) - barH * 0.205f
             drawMode4VerticalLine(canvas, lineX, barH, barTop, textColor)
             drawMode4Logo(canvas, lineX, barH, barTop, textColor, context, info)
             return
@@ -492,8 +573,9 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         if (info.showDate) {
             val datePaint = Paint().apply {
                 color = fadeColor(textColor, 0.2f)
-                textSize = 0.17765f * barH
-                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+                // v1.2.3: 日期与参数行统一粗细/字号（NORMAL→BOLD, 0.17765→0.1764）
+                textSize = 0.1764f * barH
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
                 letterSpacing = 0.015f
                 textAlign = Paint.Align.RIGHT
             }
@@ -510,7 +592,7 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         }
 
         // Vertical line separator
-        val lineX = textLeftX - barH * 0.2415f
+        val lineX = textLeftX - barH * 0.205f
         drawMode4VerticalLine(canvas, lineX, barH, barTop, textColor)
         drawMode4Logo(canvas, lineX, barH, barTop, textColor, context, info)
     }
@@ -528,9 +610,11 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         try {
             val src = BitmapFactory.decodeResource(context.resources, R.drawable.mode4_m_logo) ?: return
             if (!src.isRecycled) {
-                val logoH = barH * 0.875f
+                // v1.2.6: M logo 微调到 0.745（0.717→0.745），对齐官方直径 ≈79px
+                val logoH = barH * 0.745f
                 val logoW = (src.width.toFloat() / src.height) * logoH
-                val logoX = lineX - logoW - barH * 0.07f
+                // v1.2.6: 收紧 M logo 与竖线间距（0.07→0.035）
+                val logoX = lineX - logoW - barH * 0.035f
                 val logoY = barTop + (barH - logoH) / 2f
                 val tinted = tintBitmap(src, textColor)
                 src.recycle()
@@ -595,8 +679,9 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         if (info.showDate) {
             val datePaint = Paint()
             datePaint.color = fadeColor(textColor, 0.17f)
-            datePaint.textSize = 0.17765f * barH
-            datePaint.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+            // v1.2.3: 日期与参数行统一粗细/字号（NORMAL→BOLD, 0.17765→0.168）
+            datePaint.textSize = (if (isPortrait) 0.168f else 0.21f) * barH
+            datePaint.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             datePaint.letterSpacing = 0.015f
             datePaint.textAlign = Paint.Align.RIGHT
             val dateTextSize = datePaint.textSize
@@ -724,7 +809,12 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             tinted.recycle()
             cx += lw + nameSz * 0.5f
         }
-        canvas.drawText(deviceName, cx, baseline, namePaint)
+        // v1.1.8: Signature 机型用花体替代机型名文字（放大）
+        // v1.2.8: 花体放大到与其它样式一致的比例（0.685→0.892，笔画高/字标高≈1.77），视觉对齐协调
+        if (!drawSignatureIfNeeded(canvas, deviceName, context, cx, barTop + barH / 2f, barH * 0.892f, Color.argb(245, 255, 255, 255), Paint.Align.LEFT)) {
+            // v1.3.2: 普通机型文字按实际墨迹中心对齐字标中心线（与花体同一条线）
+            canvas.drawText(deviceName, cx, baselineForVisualCenter(namePaint, deviceName, barTop + barH / 2f), namePaint)
+        }
 
         // ── 右：参数 + 日期 ──
         if (paramStr.isNotBlank() || dateStr.isNotBlank()) {
@@ -760,6 +850,83 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         }
     }
 
+    /**
+     * v1.2.4: Pure 纯透明样式
+     * 无底栏、无遮罩，直接在原图上绘制：左侧圆形 M logo + motorola 字标 + 机型（signature 花体或文字）。
+     * 颜色纯白或纯黑（useWhiteText: false=黑，true/null=白）。
+     * v1.2.7: 三个元素尺寸与 Classic 完全一致（复用 spec.barH 与同一套系数），并水平居中对齐。
+     */
+    private fun drawPureMode(
+        canvas: Canvas, source: Bitmap, srcW: Int, srcH: Int,
+        spec: WatermarkMath.LayoutSpec, info: WatermarkInfo, context: Context
+    ) {
+        canvas.drawBitmap(source, 0f, 0f, null)
+
+        val barH = spec.barH
+        val pad = barH * 0.25f
+        // 纯透明：只显示白或黑，null 默认白
+        val color = if (info.useWhiteText == false) Color.rgb(16, 16, 16) else Color.rgb(255, 255, 255)
+
+        // ---- v1.3.1: 按官方手签版比例重做，以 motorola 字高为唯一基准 ----
+        // 官方参考图实测比例(字高=1)：M logo 圆直径=1.62，signature 花体笔画高=1.89
+        val logo = getMotorolaLogo(context)
+        val logoRatio = logo?.let { it.width.toFloat() / it.height } ?: (981f / 170f)
+        val actualLogoH = barH * 0.28f                 // motorola 字高：放大作主视觉
+        val actualLogoW = logoRatio * actualLogoH
+        // M logo 可见圆 = 字高×1.62；mode4_m_logo 可见圆占图高 578/910≈0.635 → 反推图片框高
+        val mLogoH = (actualLogoH * 1.62f) / (578f / 910f)
+        // signature 花体笔画高 = 字高×1.89；signature_script 笔画占图高≈0.554 → 反推图片框高
+        val sigBoxH = (actualLogoH * 1.89f) / 0.554f
+
+        // 三者垂直中心统一在字标中心 → 主体带中心对齐（圆/字/花体视觉同一水平线）
+        val centerY = srcH.toFloat() - pad - actualLogoH / 2f
+        val gap = barH * 0.0693f
+
+        var cx = pad
+
+        // 1) 左侧圆形 M logo（mode4_m_logo：原图黑圆白M；白字模式反色为白圆黑M，保留双色层次）
+        try {
+            val mlogo = BitmapFactory.decodeResource(context.resources, R.drawable.mode4_m_logo)
+            if (mlogo != null && !mlogo.isRecycled) {
+                val lw = (mlogo.width.toFloat() / mlogo.height) * mLogoH
+                val display = if (info.useWhiteText != false) invertLogoColors(mlogo) else mlogo
+                canvas.drawBitmap(display, null, RectF(cx, centerY - mLogoH / 2f, cx + lw, centerY + mLogoH / 2f), null)
+                if (display !== mlogo) display.recycle()
+                mlogo.recycle()
+                cx += lw + gap
+            }
+        } catch (_: Exception) {}
+
+        // 2) motorola 字标（缓存位图，不 recycle 原图）
+        // v1.3.6 [B方案]: 字标墨迹中心在图片高度58%处（偏下），把绘制框上移0.08×H，
+        // 使字标墨迹中心精确落在 centerY，与 M logo 圆心、机型文字严格同一水平线。
+        if (logo != null && !logo.isRecycled) {
+            val tinted = tintBitmap(logo, color)
+            canvas.drawBitmap(tinted, null, RectF(cx, centerY - actualLogoH * 0.58f, cx + actualLogoW, centerY + actualLogoH * 0.42f), null)
+            tinted.recycle()
+            cx += actualLogoW + gap
+        }
+
+        // 3) 机型：signature 花体或普通文字（与 Classic 同样左移贴合字标）
+        val deviceName = info.deviceName
+            .replace("motorola ", "", ignoreCase = true)
+            .replace("Motorola ", "", ignoreCase = true)
+            .trim()
+        if (!drawSignatureIfNeeded(canvas, deviceName, context, cx - barH * 0.06f, centerY, sigBoxH, color, Paint.Align.LEFT)) {
+            val namePaint = Paint().apply {
+                this.color = color
+                // v1.3.3: 缩小机型文字匹配 motorola 字标（与 Classic 一致，0.2406→0.20）
+                textSize = 0.20f * barH
+                typeface = Typeface.create(getMontserratTypeface(context), Typeface.BOLD)
+                textAlign = Paint.Align.LEFT
+                isAntiAlias = true
+            }
+            // v1.3.2: 普通机型文字按实际墨迹中心对齐圆/字标中心线
+            val text = deviceName.lowercase()
+            canvas.drawText(text, cx, baselineForVisualCenter(namePaint, text, centerY), namePaint)
+        }
+    }
+
     fun render(source: Bitmap, info: WatermarkInfo, context: Context): Bitmap {
         // 如果所有信息为空，直接返回原图
         if (info.deviceName.isBlank() && info.focalLength.isBlank() && info.aperture.isBlank() &&
@@ -791,11 +958,13 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         }
 
         val extend = info.style == 1 || info.style == 4 || info.style == 11
-        // v1.1.5: 只保留 5 种模式 Standard(1)/Corner(3)/Classic(4)/Transp.(10)/F1(11)
+        // v1.1.5: 保留 Standard(1)/Corner(3)/Classic(4)/Transp.(10)/F1(11)
+        // v1.2.4: 新增 Pure(12) 纯透明样式
         when (info.style) {
             3 -> drawDiagonalMode(canvas, source, w, outputH, spec, info, colorScheme, context)
             4 -> drawBarMode(canvas, source, w, outputH, spec, info, colorScheme, context, extend)
             10 -> drawTransparencyCenterMode(canvas, source, w, outputH, spec, info, colorScheme, context)
+            12 -> drawPureMode(canvas, source, w, outputH, spec, info, context)
             else -> drawBarMode(canvas, source, w, outputH, spec, info, colorScheme, context, extend)
         }
 

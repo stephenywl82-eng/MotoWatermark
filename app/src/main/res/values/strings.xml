@@ -6,4 +6,58 @@
     <string name="save_image">Save</string>
     <string name="processing">Processing…</string>
     <string name="success_saved">Watermarked image saved!</string>
+
+    <!-- Main screen -->
+    <string name="center_hint">Tap + to add watermark\nLong press + for batch mode</string>
+    <string name="section_style">STYLE</string>
+    <string name="style_standard">Standard</string>
+    <string name="style_corner">Corner</string>
+    <string name="style_classic">Classic</string>
+    <string name="style_transp">Transp.</string>
+    <string name="style_f1">F1</string>
+    <string name="style_pure">Pure</string>
+    <string name="owner">Owner</string>
+    <string name="section_toggles">TOGGLES</string>
+    <string name="toggle_params">Params</string>
+    <string name="toggle_date">Date</string>
+    <string name="toggle_logo">Logo</string>
+    <string name="toggle_png">PNG</string>
+    <string name="toggle_white_text">White Text</string>
+    <string name="toggle_white_bg">White BG</string>
+
+    <!-- v1.1.7 手动选择型号 / 外部机型库 -->
+    <string name="hint_owner">\@stephen</string>
+    <string name="device_model_label">Model</string>
+    <string name="device_auto">Auto (EXIF)</string>
+    <string name="device_picker_title">Select or enter device model</string>
+    <string name="device_search_hint">Enter a custom name or search…</string>
+    <string name="device_use_name">Use entered name</string>
+    <string name="device_import">Import JSON</string>
+    <string name="device_reset">Reset</string>
+    <string name="device_import_ok">Device list imported</string>
+    <string name="device_import_fail">Failed to import device list</string>
+
+    <!-- v1.3.4 设置页 -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="theme_follow_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_language">Language</string>
+    <string name="lang_follow_system">System default</string>
+    <string name="lang_english">English</string>
+    <string name="lang_chinese">简体中文</string>
+    <string name="settings_about">About</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_author">Author</string>
+    <string name="about_github">GitHub repository</string>
+    <string name="about_description">Add authentic Motorola-style watermarks to your photos.</string>
+
+    <!-- 运行时提示 -->
+    <string name="camera_permission_required">Camera permission required</string>
+    <string name="batch_done">Done: %1$d saved, %2$d failed</string>
+    <string name="error_with_msg">Error: %1$s</string>
+    <string name="saved">Saved!</string>
+    <string name="save_failed">Save failed: %1$s</string>
 </resources>

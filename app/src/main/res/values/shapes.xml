@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        M3 Expressive 形状体系（与 SDWMP3_CN 的 MotoExpressiveShapes 完全一致）：
+        小元素 12 / 默认卡片 28 / 大区块 36 / Hero·FAB 48 / 按钮·Chip 胶囊 999dp。
+        注意：样式名含点号，必须显式 parent="" 关闭 AAPT2 的「点号即继承」推断，否则会被当成
+        继承自不存在的 ShapeAppearance.MotoWatermark 父样式而报错。
+    -->
+    <style name="ShapeAppearance.MotoWatermark.Small" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <style name="ShapeAppearance.MotoWatermark.Medium" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">28dp</item>
+    </style>
+
+    <style name="ShapeAppearance.MotoWatermark.Large" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">36dp</item>
+    </style>
+
+    <style name="ShapeAppearance.MotoWatermark.ExtraLarge" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">48dp</item>
+    </style>
+
+    <style name="ShapeAppearance.MotoWatermark.Pill" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">999dp</item>
+    </style>
+</resources>

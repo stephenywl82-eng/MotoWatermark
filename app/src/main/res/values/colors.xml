@@ -1,35 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- [v1.1.4] 与播放器 (Moto Music Pro) 统一设计语言：纯黑 + 蓝/金/紫 -->
-    <color name="md_theme_primary">#42A5F5</color>
-    <color name="md_theme_onPrimary">#000000</color>
-    <color name="md_theme_primaryContainer">#1A3A5C</color>
-    <color name="md_theme_onPrimaryContainer">#B3D4FC</color>
+    <!-- [v1.3.4] 浅色主题色板（深色板在 values-night/colors.xml）
+         与播放器 (Moto Music Pro) 统一设计语言：蓝/金/紫，浅色模式变体 -->
+    <color name="md_theme_primary">#1453A0</color>
+    <color name="md_theme_onPrimary">#FFFFFF</color>
+    <color name="md_theme_primaryContainer">#D5E3FF</color>
+    <color name="md_theme_onPrimaryContainer">#001B3A</color>
 
-    <color name="md_theme_secondary">#C9A962</color>
-    <color name="md_theme_onSecondary">#000000</color>
-    <color name="md_theme_secondaryContainer">#B08D3E</color>
-    <color name="md_theme_onSecondaryContainer">#000000</color>
+    <color name="md_theme_secondary">#6D5A2B</color>
+    <color name="md_theme_onSecondary">#FFFFFF</color>
+    <color name="md_theme_secondaryContainer">#F2E0B5</color>
+    <color name="md_theme_onSecondaryContainer">#241B00</color>
 
-    <color name="md_theme_tertiary">#8E6FD0</color>
+    <color name="md_theme_tertiary">#6750A4</color>
     <color name="md_theme_onTertiary">#FFFFFF</color>
-    <color name="md_theme_tertiaryContainer">#3E285C</color>
-    <color name="md_theme_onTertiaryContainer">#E8DEF8</color>
+    <color name="md_theme_tertiaryContainer">#EADDFF</color>
+    <color name="md_theme_onTertiaryContainer">#21005D</color>
 
-    <color name="md_theme_error">#EF5350</color>
-    <color name="md_theme_onError">#F5F5F7</color>
-    <color name="md_theme_errorContainer">#93000A</color>
-    <color name="md_theme_onErrorContainer">#FFDAD6</color>
+    <color name="md_theme_error">#B3261E</color>
+    <color name="md_theme_onError">#FFFFFF</color>
+    <color name="md_theme_errorContainer">#F9DEDC</color>
+    <color name="md_theme_onErrorContainer">#410E0B</color>
 
-    <color name="md_theme_background">#000000</color>
-    <color name="md_theme_onBackground">#F5F5F7</color>
-    <color name="md_theme_surface">#0D0D0D</color>
-    <color name="md_theme_onSurface">#F5F5F7</color>
-    <color name="md_theme_surfaceVariant">#181818</color>
-    <color name="md_theme_onSurfaceVariant">#8E8E93</color>
+    <color name="md_theme_background">#F7F6FA</color>
+    <color name="md_theme_onBackground">#1A1B20</color>
+    <color name="md_theme_surface">#FFFFFF</color>
+    <color name="md_theme_onSurface">#1A1B20</color>
+    <color name="md_theme_surfaceVariant">#E7E1EC</color>
+    <color name="md_theme_onSurfaceVariant">#49454F</color>
 
-    <color name="md_theme_outline">#333333</color>
-    <color name="md_theme_outlineVariant">#1A1A1A</color>
+    <color name="md_theme_outline">#79747E</color>
+    <color name="md_theme_outlineVariant">#CAC4D0</color>
 
     <!-- Custom accent colors -->
     <color name="md_accent_vibrant">#FFAA66</color>

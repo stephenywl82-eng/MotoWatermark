@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Moto 水印</string>
+    <string name="select_photo">选择照片</string>
+    <string name="apply_watermark">添加水印</string>
+    <string name="save_image">保存</string>
+    <string name="processing">处理中…</string>
+    <string name="success_saved">水印图片已保存！</string>
+
+    <!-- 主界面 -->
+    <string name="center_hint">点按 + 添加水印\n长按 + 进入批量模式</string>
+    <string name="section_style">样式</string>
+    <string name="style_standard">标准</string>
+    <string name="style_corner">角落</string>
+    <string name="style_classic">经典</string>
+    <string name="style_transp">透明</string>
+    <string name="style_f1">F1</string>
+    <string name="style_pure">纯净</string>
+    <string name="owner">署名</string>
+    <string name="section_toggles">开关</string>
+    <string name="toggle_params">参数</string>
+    <string name="toggle_date">日期</string>
+    <string name="toggle_logo">标志</string>
+    <string name="toggle_png">PNG</string>
+    <string name="toggle_white_text">白色文字</string>
+    <string name="toggle_white_bg">白色背景</string>
+
+    <!-- 手动选择型号 / 外部机型库 -->
+    <string name="hint_owner">\@stephen</string>
+    <string name="device_model_label">机型</string>
+    <string name="device_auto">自动识别 (EXIF)</string>
+    <string name="device_picker_title">选择或输入机型</string>
+    <string name="device_search_hint">输入自定义名称或搜索…</string>
+    <string name="device_use_name">使用输入的名称</string>
+    <string name="device_import">导入 JSON</string>
+    <string name="device_reset">重置</string>
+    <string name="device_import_ok">机型列表已导入</string>
+    <string name="device_import_fail">机型列表导入失败</string>
+
+    <!-- 设置页 -->
+    <string name="settings_title">设置</string>
+    <string name="settings_appearance">外观</string>
+    <string name="settings_theme">主题</string>
+    <string name="theme_follow_system">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="settings_language">语言</string>
+    <string name="lang_follow_system">跟随系统</string>
+    <string name="lang_english">English</string>
+    <string name="lang_chinese">简体中文</string>
+    <string name="settings_about">关于</string>
+    <string name="about_version">版本 %1$s</string>
+    <string name="about_author">作者</string>
+    <string name="about_github">GitHub 仓库</string>
+    <string name="about_description">为你的照片添加正宗的摩托罗拉风格水印。</string>
+
+    <!-- 运行时提示 -->
+    <string name="camera_permission_required">需要相机权限</string>
+    <string name="batch_done">完成：成功 %1$d 张，失败 %2$d 张</string>
+    <string name="error_with_msg">错误：%1$s</string>
+    <string name="saved">已保存！</string>
+    <string name="save_failed">保存失败：%1$s</string>
+</resources>

@@ -17,6 +17,7 @@
         android:maxSdkVersion="32" />
 
     <application
+        android:name=".MotoWatermarkApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -44,6 +45,12 @@
                 <data android:mimeType="image/*" />
             </intent-filter>
         </activity>
+
+        <!-- v1.3.4: 设置页 -->
+        <activity
+            android:name=".ui.SettingsActivity"
+            android:exported="false"
+            android:label="@string/settings_title" />
 
         <!-- FileProvider for sharing watermarked images -->
         <provider

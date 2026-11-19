@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.watermark.photo.R
 import com.watermark.photo.core.WatermarkEngine
 import com.watermark.photo.data.ExifParamsExtractor
+import com.watermark.photo.data.DeviceMapper
 import com.watermark.photo.data.WatermarkInfo
 import com.watermark.photo.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
@@ -47,6 +48,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pickMultipleMedia: ActivityResultLauncher<Array<String>>
     private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
     private lateinit var requestCameraPermission: ActivityResultLauncher<String>
+    private lateinit var importDeviceJson: ActivityResultLauncher<Array<String>>
     private var rawPhotoUri: Uri? = null
     private var rawPhotoPath: String? = null
     private var showParams = true
@@ -59,6 +61,7 @@ class MainActivity : AppCompatActivity() {
     private var useWhiteText: Boolean? = null
     private var useWhiteBg = false
     private var ownerName = ""
+    private var manualDeviceName: String? = null   // v1.1.7 手动选择的机型；null=自动识别EXIF
     private var showLogo = true
     private var usePng = true
     private var isPickMode = false             // 鏄惁澶勪簬鍙栬壊妯″紡
@@ -125,13 +128,15 @@ class MainActivity : AppCompatActivity() {
         barbiePink = prefs.getBoolean("barbie_pink", false)
         currentStyle = prefs.getInt("style", 1)
         ownerName = prefs.getString("owner_name", "") ?: ""
+        manualDeviceName = prefs.getString("manual_device", null)
         usePng = prefs.getBoolean("use_png", true)
 
         // 鎭㈠鎺т欢鐘舵€?        binding.switchParams.isChecked = showParams
         binding.switchDate.isChecked = showDate
         binding.switchLogo.isChecked = showLogo
         // v1.1.5: 非留存模式(2/5/6/7/8/9)一律迁移到 Standard(1)
-        if (currentStyle != 1 && currentStyle != 3 && currentStyle != 4 && currentStyle != 10 && currentStyle != 11) {
+        // v1.2.4: 加入 Pure(12)
+        if (currentStyle != 1 && currentStyle != 3 && currentStyle != 4 && currentStyle != 10 && currentStyle != 11 && currentStyle != 12) {
             currentStyle = 1
             prefs.edit().putInt("style", currentStyle).apply()
         }
@@ -140,6 +145,7 @@ class MainActivity : AppCompatActivity() {
             4 -> binding.chipStyle4.isChecked = true
             10 -> binding.chipStyle10.isChecked = true
             11 -> binding.chipStyle11.isChecked = true
+            12 -> binding.chipStyle12.isChecked = true
             else -> binding.chipStyle1.isChecked = true
         }
         binding.colorChipGroup.visibility = View.VISIBLE
@@ -193,6 +199,25 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // v1.1.7 外部机型库 JSON 导入
+        importDeviceJson = registerForActivityResult(
+            ActivityResultContracts.OpenDocument()
+        ) { uri ->
+            uri?.let { u ->
+                try {
+                    val text = contentResolver.openInputStream(u)?.bufferedReader()?.use { it.readText() }
+                    if (text.isNullOrBlank()) {
+                        Toast.makeText(this, R.string.device_import_fail, Toast.LENGTH_SHORT).show()
+                    } else {
+                        val count = DeviceMapper.importJson(this, text)
+                        Toast.makeText(this, getString(R.string.device_import_ok) + " ($count)", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(this, R.string.device_import_fail, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
         binding.fabCamera.setOnClickListener {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                 launchCamera()
@@ -242,6 +267,7 @@ class MainActivity : AppCompatActivity() {
                 checkedIds.contains(R.id.chipStyle4) -> 4
                 checkedIds.contains(R.id.chipStyle10) -> 10
                 checkedIds.contains(R.id.chipStyle11) -> 11
+                checkedIds.contains(R.id.chipStyle12) -> 12
                 else -> 1
             }
             prefs.edit().putInt("style", currentStyle).apply()
@@ -304,6 +330,15 @@ class MainActivity : AppCompatActivity() {
             ownerName = text?.toString()?.trim() ?: ""
             prefs.edit().putString("owner_name", ownerName).apply()
             if (currentBitmap != null) applyWatermarkAndShow()
+        }
+
+        // v1.1.7 Device model manual select
+        updateDeviceButtonLabel()
+        binding.btnDeviceModel.setOnClickListener { showDevicePicker() }
+
+        // v1.3.4: 设置入口
+        binding.btnSettings.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
 
         // White background switch
@@ -509,6 +544,124 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** v1.1.7 机型按钮文案：手动值或"自动识别" */
+    private fun updateDeviceButtonLabel() {
+        binding.btnDeviceModel.text = manualDeviceName ?: getString(R.string.device_auto)
+    }
+
+    /** v1.3.0 机型选择器：自由输入 + 预设列表 + 搜索过滤 + 导入/重置 */
+    private fun showDevicePicker() {
+        val autoLabel = getString(R.string.device_auto)
+        val names = DeviceMapper.allDisplayNames()
+        val items = mutableListOf<String>().apply {
+            add(autoLabel)
+            addAll(names)
+        }
+        var checkedIndex = if (manualDeviceName == null) 0 else items.indexOf(manualDeviceName).let { if (it >= 0) it else 0 }
+
+        // 输入框：预填当前机型（自定义名也能显示出来）
+        val searchInput = android.widget.EditText(this).apply {
+            hint = getString(R.string.device_search_hint)
+            isSingleLine = true
+            setText(manualDeviceName ?: "")
+            setTextColor(ContextCompat.getColor(context, R.color.md_theme_onSurface))
+            setHintTextColor(ContextCompat.getColor(context, R.color.md_theme_onSurfaceVariant))
+        }
+        val listView = android.widget.ListView(this)
+        val adapter = android.widget.ArrayAdapter<String>(
+            this, android.R.layout.simple_list_item_single_choice, items.toMutableList()
+        )
+        listView.adapter = adapter
+        listView.choiceMode = android.widget.ListView.CHOICE_MODE_SINGLE
+        listView.setItemChecked(checkedIndex, true)
+
+        fun applyFilter(query: String?) {
+            val q = query?.trim()?.lowercase().orEmpty()
+            val filtered = if (q.isEmpty()) items.toList()
+            else items.filter { it.lowercase().contains(q) }
+            adapter.clear()
+            adapter.addAll(filtered)
+            adapter.notifyDataSetChanged()
+        }
+        searchInput.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = applyFilter(s.toString())
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+
+        // 导入/重置 小按钮行
+        val extraRow = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            val pad = (10 * resources.displayMetrics.density).toInt()
+            setPadding(0, pad, 0, 0)
+        }
+        fun smallButton(label: String, onClick: () -> Unit): android.widget.Button =
+            android.widget.Button(this).apply {
+                text = label
+                isAllCaps = false
+                textSize = 12f
+                setTextColor(ContextCompat.getColor(context, R.color.md_theme_primary))
+                setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                setOnClickListener { onClick() }
+            }
+        extraRow.addView(smallButton(getString(R.string.device_import)) {
+            importDeviceJson.launch(arrayOf("application/json", "*/*"))
+        })
+        extraRow.addView(smallButton(getString(R.string.device_reset)) {
+            DeviceMapper.resetToBuiltin(this)
+            manualDeviceName = null
+            prefs.edit().putString("manual_device", null).apply()
+            updateDeviceButtonLabel()
+            if (currentBitmap != null) applyWatermarkAndShow()
+            Toast.makeText(this, R.string.device_import_ok, Toast.LENGTH_SHORT).show()
+        })
+
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            val pad = (16 * resources.displayMetrics.density).toInt()
+            setPadding(pad, pad, pad, pad)
+            addView(searchInput, android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ))
+            addView(listView, android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
+            ))
+            addView(extraRow, android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ))
+        }
+
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.device_picker_title)
+            .setView(container)
+            // 确定：使用输入框里的名字（可自定义任意机型，无需维护库）
+            .setPositiveButton(R.string.device_use_name) { _, _ ->
+                val typed = searchInput.text?.toString()?.trim().orEmpty()
+                manualDeviceName = when {
+                    typed.isEmpty() || typed == autoLabel -> null
+                    else -> typed
+                }
+                prefs.edit().putString("manual_device", manualDeviceName).apply()
+                updateDeviceButtonLabel()
+                if (currentBitmap != null) applyWatermarkAndShow()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
+
+        // 点击预设列表项：立即选中该机型（不含 signature 自动用默认字体）
+        listView.setOnItemClickListener { _, _, position, _ ->
+            val selected = adapter.getItem(position) as String
+            manualDeviceName = if (selected == autoLabel) null else selected
+            prefs.edit().putString("manual_device", manualDeviceName).apply()
+            updateDeviceButtonLabel()
+            dialog.dismiss()
+            if (currentBitmap != null) applyWatermarkAndShow()
+        }
+        dialog.show()
+    }
+
     private fun applyWatermarkAndShow() {
         val bitmap = currentBitmap ?: return
         mainScope.launch {
@@ -564,13 +717,13 @@ class MainActivity : AppCompatActivity() {
         return WatermarkInfo(
             brandLogo = leftLogo,
             rightLogo = rightLogo,
-            deviceName = realParams?.model ?: "",
+            deviceName = manualDeviceName ?: (realParams?.model ?: ""),
             focalLength = realParams?.focalLength?.takeIf { it.isNotBlank() } ?: "",
             aperture = realParams?.aperture?.takeIf { it.isNotBlank() } ?: "",
             shutterSpeed = realParams?.shutterSpeed?.takeIf { it.isNotBlank() } ?: "",
             iso = realParams?.iso?.takeIf { it.isNotBlank() } ?: "",
             date = realParams?.dateTaken ?: "",
-            isMotorola = realParams?.isMotorola ?: false
+            isMotorola = manualDeviceName != null || (realParams?.isMotorola ?: false)
         )
     }
 
@@ -587,13 +740,13 @@ class MainActivity : AppCompatActivity() {
         return WatermarkInfo(
             brandLogo = leftLogo,
             rightLogo = rightLogo,
-            deviceName = realParams?.model ?: "",
+            deviceName = manualDeviceName ?: (realParams?.model ?: ""),
             focalLength = realParams?.focalLength?.takeIf { it.isNotBlank() } ?: "",
             aperture = realParams?.aperture?.takeIf { it.isNotBlank() } ?: "",
             shutterSpeed = realParams?.shutterSpeed?.takeIf { it.isNotBlank() } ?: "",
             iso = realParams?.iso?.takeIf { it.isNotBlank() } ?: "",
             date = realParams?.dateTaken ?: "",
-            isMotorola = realParams?.isMotorola ?: false
+            isMotorola = manualDeviceName != null || (realParams?.isMotorola ?: false)
         )
     }
 
@@ -650,6 +803,27 @@ class MainActivity : AppCompatActivity() {
         val previewHeight = 120
         val previewBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Bitmap.Config.ARGB_8888)
         val canvas = android.graphics.Canvas(previewBitmap)
+
+        // v1.2.4: Pure 纯透明样式预览 —— 模拟照片底 + 白字 logo+字标+机型
+        if (currentStyle == 12) {
+            canvas.drawColor(android.graphics.Color.parseColor("#4a4f57"))
+            val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE }
+            // M logo（圆形示意）
+            p.style = android.graphics.Paint.Style.FILL
+            canvas.drawCircle(26f, 92f, 11f, p)
+            p.color = android.graphics.Color.parseColor("#4a4f57")
+            p.textSize = 13f
+            p.typeface = android.graphics.Typeface.DEFAULT_BOLD
+            canvas.drawText("M", 21f, 97f, p)
+            // motorola 字标 + 机型
+            p.color = android.graphics.Color.WHITE
+            p.textSize = 15f
+            canvas.drawText("motorola", 44f, 97f, p)
+            p.textSize = 13f
+            canvas.drawText("signature", 108f, 97f, p)
+            binding.ivStylePreview.setImageBitmap(previewBitmap)
+            return
+        }
 
         if (currentStyle == 10) {
             // Camera Info Bar preview — bottom full-width bar

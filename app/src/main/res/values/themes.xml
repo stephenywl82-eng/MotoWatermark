@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- [v1.1.4] 强制深色，与播放器统一；不使用 Material You 动态取色 -->
-    <style name="Theme.MotoWatermark" parent="Theme.Material3.Dark.NoActionBar">
+    <!-- [v1.3.4] 改为 DayNight：跟随 app 主题设置（浅色/深色/系统）自动切换。
+         浅色色板在 values/colors.xml，深色板在 values-night/colors.xml。
+         强调色仍由 Application 中 DynamicColors 在运行时叠加系统主题色。 -->
+    <style name="Theme.MotoWatermark" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/md_theme_primary</item>
         <item name="colorOnPrimary">@color/md_theme_onPrimary</item>
         <item name="colorPrimaryContainer">@color/md_theme_primaryContainer</item>
@@ -26,10 +28,20 @@
         <item name="colorOnSurfaceVariant">@color/md_theme_onSurfaceVariant</item>
         <item name="colorOutline">@color/md_theme_outline</item>
         <item name="colorOutlineVariant">@color/md_theme_outlineVariant</item>
+
+        <!-- M3 Expressive：Filter Chip 胶囊化（与 SDWMP3_CN small=50dp 一致） -->
+        <item name="chipStyle">@style/Widget.MotoWatermark.Chip.Filter</item>
+        <item name="chipStandaloneStyle">@style/Widget.MotoWatermark.Chip.Filter</item>
         <item name="android:windowBackground">@color/md_theme_background</item>
+        <!-- [v1.3.6] 透明状态栏：由 SettingsActivity 通过 insets 给工具栏加顶部 padding，
+             内容背景延伸进状态栏，工具栏文字稳定落在状态栏下方。主界面沉浸式不受影响。 -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="isLightTheme">false</item>
+    </style>
+
+    <!-- M3 Expressive Filter Chip：胶囊 + 加高 -->
+    <style name="Widget.MotoWatermark.Chip.Filter" parent="Widget.Material3.Chip.Filter">
+        <item name="chipCornerRadius">999dp</item>
+        <item name="chipMinHeight">36dp</item>
     </style>
 </resources>

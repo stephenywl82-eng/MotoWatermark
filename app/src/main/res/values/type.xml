@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        M3 Expressive 排版张力（与 SDWMP3_CN 完全一致）：
+        标题超大 + 极粗 + 负字距，正文克制，形成强字重落差。
+        数值照搬 SDWMP3_CN 的 SDWTypography（Compose 的 sp 字距换算为 em）。
+    -->
+    <style name="TextAppearance.MotoWatermark.Display" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:textSize">34sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.018</item>
+    </style>
+
+    <style name="TextAppearance.MotoWatermark.Headline" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:textSize">23sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.009</item>
+    </style>
+
+    <style name="TextAppearance.MotoWatermark.Title" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.0075</item>
+    </style>
+
+    <style name="TextAppearance.MotoWatermark.Label" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+
+    <style name="TextAppearance.MotoWatermark.Body" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+</resources>
