@@ -8,7 +8,7 @@ import android.graphics.*
  */
 object WatermarkMath {
     data class LayoutSpec(
-        val barH: Float,           // 底栏高度 = S × 12%
+        val barH: Float,           // 底栏高度 = S × 12.5%（对齐摩托罗拉原版）
         val padH: Float,           // 水平内边距 = barH × 0.5
         val padV: Float,           // 垂直内边距 = barH × 0.25
         val logoMaxH: Float,       // Logo 最大高度 = barH × 0.7
@@ -22,7 +22,7 @@ object WatermarkMath {
 
     fun computeLayoutSpec(w: Int, h: Int): LayoutSpec {
         val s = minOf(w, h).toFloat()
-        val barH = s * 0.13f
+        val barH = s * 0.125f
         return LayoutSpec(
             barH = barH,
             padH = barH * 0.5f,
