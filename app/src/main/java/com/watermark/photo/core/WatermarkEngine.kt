@@ -15,9 +15,11 @@ import kotlin.math.min as kMin
 object WatermarkEngine {
 
     // v1.3.7 [原版对齐]: 参数文字统一比例——横竖屏一致，消除横屏偏大/竖屏偏小。
-    // 真机实测：原版参数墨迹高 = 0.162×barH，本字体 墨迹/textSize ≈ 0.79；
-    // textSize = 0.205×barH → 墨迹 0.162×barH，与原版精确一致
-    private const val PARAM_TEXT_RATIO = 0.205f
+    // 真机逐像素实测(同图同参数对比原版)：
+    // 原版参数 墨迹高=22px(0.155barH)、文字宽=306px、笔画宽≈7px(粗体)；
+    // v1.4.1: 用系统真粗体 SANS_SERIF BOLD(笔画够粗) + textSize=0.167barH(墨迹高≈22)
+    //         + textScaleX=0.94(字宽压到≈306)，兼顾粗细与宽度。
+    private const val PARAM_TEXT_RATIO = 0.167f
 
     private var montserratTypeface: Typeface? = null
 
@@ -515,11 +517,20 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         val measurePaint = Paint().apply {
             textSize = PARAM_TEXT_RATIO * barH
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            // v1.3.9: 必须与实际绘制 paramPaint 的 letterSpacing 一致，
+            // 否则测宽偏小 -> textLeftX 偏右 -> 竖线和 logo 整体偏右，与原版对不齐
+            letterSpacing = 0.015f
+            // v1.4.1: 真粗体压窄到原版字宽
+            textScaleX = 1.066f
         }
         val measureDatePaint = Paint().apply {
             // v1.2.3: 与实际日期文字一致，保证竖线定位准确
             textSize = PARAM_TEXT_RATIO * barH
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            // v1.3.9: 与实际绘制 datePaint 的 letterSpacing 一致
+            letterSpacing = 0.015f
+            // v1.4.1: 真粗体压窄到原版字宽
+            textScaleX = 1.066f
         }
 
         if (!info.showDate && info.showParams) {
@@ -529,6 +540,8 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
                 textSize = PARAM_TEXT_RATIO * barH
                 typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
                 letterSpacing = 0.015f
+                // v1.4.1: 真粗体压窄到原版字宽
+                textScaleX = 1.066f
                 textAlign = Paint.Align.RIGHT
             }
             val paramTextSize = paramPaint.textSize
@@ -536,7 +549,7 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
             canvas.drawText(paramText, rightX, paramCenterY, paramPaint)
 
             val textLeftX = rightX - measurePaint.measureText(paramText)
-            val lineX = textLeftX - barH * 0.205f
+            val lineX = textLeftX - barH * 0.145f
             drawMode4VerticalLine(canvas, lineX, barH, barTop, textColor)
             drawMode4Logo(canvas, lineX, barH, barTop, textColor, context, info)
             return
@@ -550,13 +563,15 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
                 textSize = PARAM_TEXT_RATIO * barH
                 typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
                 letterSpacing = 0.015f
+                // v1.4.1: 真粗体压窄到原版字宽
+                textScaleX = 1.066f
                 textAlign = Paint.Align.RIGHT
             }
             val dateTextSize = datePaint.textSize
             val dateCenterY = barTop + barH / 2f + 0.38f * dateTextSize
             canvas.drawText(dateNoTime, rightX, dateCenterY, datePaint)
 
-            val lineX = rightX - measureDatePaint.measureText(dateNoTime) - barH * 0.205f
+            val lineX = rightX - measureDatePaint.measureText(dateNoTime) - barH * 0.145f
             drawMode4VerticalLine(canvas, lineX, barH, barTop, textColor)
             drawMode4Logo(canvas, lineX, barH, barTop, textColor, context, info)
             return
@@ -569,6 +584,8 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
                 textSize = PARAM_TEXT_RATIO * barH
                 typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
                 letterSpacing = 0.015f
+                // v1.4.1: 真粗体压窄到原版字宽
+                textScaleX = 1.066f
                 textAlign = Paint.Align.RIGHT
             }
             val paramTextSize = paramPaint.textSize
@@ -582,6 +599,8 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
                 textSize = PARAM_TEXT_RATIO * barH
                 typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
                 letterSpacing = 0.015f
+                // v1.4.1: 真粗体压窄到原版字宽
+                textScaleX = 1.066f
                 textAlign = Paint.Align.RIGHT
             }
             val dateTextSize = datePaint.textSize
@@ -597,7 +616,7 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
         }
 
         // Vertical line separator
-        val lineX = textLeftX - barH * 0.205f
+        val lineX = textLeftX - barH * 0.145f
         drawMode4VerticalLine(canvas, lineX, barH, barTop, textColor)
         drawMode4Logo(canvas, lineX, barH, barTop, textColor, context, info)
     }
@@ -618,8 +637,8 @@ private fun drawDiagonalMode(canvas: Canvas, source: Bitmap, srcW: Int, srcH: In
                 // v1.2.6: M logo 微调到 0.745（0.717→0.745），对齐官方直径 ≈79px
                 val logoH = barH * 0.782f
                 val logoW = (src.width.toFloat() / src.height) * logoH
-                // v1.2.6: 收紧 M logo 与竖线间距（0.07→0.035）
-                val logoX = lineX - logoW - barH * 0.035f
+                // v1.3.9: 可见圆右缘到竖线 = 0.179*logoW + 间距 → 0.140barH + 0.02barH = 0.16barH（对齐原版）
+                val logoX = lineX - logoW - barH * 0.02f
                 val logoY = barTop + (barH - logoH) / 2f
                 val tinted = tintBitmap(src, textColor)
                 src.recycle()
