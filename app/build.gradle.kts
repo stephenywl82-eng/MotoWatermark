@@ -11,8 +11,8 @@ android {
         applicationId = "com.watermark.photo"
         minSdk = 26
         targetSdk = 35
-        versionCode = 57
-        versionName = "1.3.8"
+        versionCode = 60
+        versionName = "1.4.1"
     }
 
     signingConfigs {
